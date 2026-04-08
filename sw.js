@@ -34,6 +34,13 @@ self.addEventListener('fetch', (event) => {
   if (requestUrl.pathname.startsWith('/api')) {
     return;
   }
+  if (
+    requestUrl.searchParams.has('token') ||
+    requestUrl.searchParams.has('loginToken') ||
+    requestUrl.searchParams.has('authToken')
+  ) {
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cached) => {

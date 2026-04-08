@@ -462,6 +462,7 @@
     <script>
       const BACKEND_API_BASE = 'https://inventory-proxy.conceptideas0.workers.dev/api';
       const FETCH_TIMEOUT_MS = 30000;
+      const APP_ORIGIN = window.location.origin;
       var allItems = [];
       var types = [];
       var people = [];
@@ -478,7 +479,7 @@
         });
       }
 
-      function getAuthToken() { return localStorage.getItem('inventoryLoginToken') || ''; }
+      function getAuthToken() { return sessionStorage.getItem('inventoryLoginToken') || ''; }
       function formatDateDisplaySafe(dateString) {
         if (!dateString) return 'Unknown';
         try {
@@ -527,9 +528,10 @@
         var url = new URL(BACKEND_API_BASE);
         url.searchParams.set('api', action);
         var token = getAuthToken();
-        if (token) { url.searchParams.set('authToken', token); url.searchParams.set('token', token); }
+        var headers = {};
+        if (token) { headers.Authorization = 'Bearer ' + token; }
         Object.keys(params || {}).forEach(k => { if (params[k] != null) url.searchParams.set(k, String(params[k])); });
-        return fetchWithTimeout(url.toString(), { mode: 'cors' }).then(parseJsonResponse);
+        return fetchWithTimeout(url.toString(), { mode: 'cors', headers: headers }).then(parseJsonResponse);
       }
 
       function callApiPost(action, payload) {
@@ -537,13 +539,22 @@
         url.searchParams.set('api', action);
         var body = Object.assign({}, payload || {});
         var token = getAuthToken();
-        if (token) { body.authToken = token; url.searchParams.set('authToken', token); url.searchParams.set('token', token); }
+        var headers = { 'Content-Type': 'application/json' };
+        if (token) { body.authToken = token; headers.Authorization = 'Bearer ' + token; }
         return fetchWithTimeout(url.toString(), {
           method: 'POST',
           mode: 'cors',
-          headers: { 'Content-Type': 'application/json' },
+          headers: headers,
           body: JSON.stringify(body)
         }).then(parseJsonResponse);
+      }
+      function escapeHtml(value) {
+        return String(value == null ? '' : value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
       }
 
       function expectArray(v, label) {
@@ -555,8 +566,8 @@
       function handleAuthExpiryIfNeeded(error) {
         var msg = String((error && error.message) || '').toLowerCase();
         if (msg.indexOf('invalid or expired auth token') > -1 || msg.indexOf('authtoke') > -1) {
-          localStorage.removeItem('inventoryLoginToken');
-          localStorage.removeItem('inventoryLoggedInUser');
+          sessionStorage.removeItem('inventoryLoginToken');
+          sessionStorage.removeItem('inventoryLoggedInUser');
           goToMenu();
           return true;
         }
@@ -565,7 +576,7 @@
 
       function goToMenu() {
         if (window.parent && window.parent !== window) {
-          window.parent.postMessage({ type: 'inventory-nav-menu' }, '*');
+          window.parent.postMessage({ type: 'inventory-nav-menu' }, APP_ORIGIN);
         }
       }
       
@@ -590,7 +601,7 @@
       function updateTypeFilter() {
         const select = document.getElementById('typeFilter');
         select.innerHTML = '<option value="All">모든 종류 All Types</option>';
-        types.forEach(t => { select.innerHTML += `<option value="${t}">${t}</option>`; });
+        types.forEach(t => { select.innerHTML += `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`; });
       }
       
       function updateModelFilter() {
@@ -601,7 +612,7 @@
           modelSelect.innerHTML = '<option value="All">모든 모델 All Models</option>';
           if (allItems.length > 0) {
             const ms = [...new Set(allItems.map(i => i.model).filter(Boolean))].sort();
-            ms.forEach(m => { modelSelect.innerHTML += `<option value="${m}">${m}</option>`; });
+            ms.forEach(m => { modelSelect.innerHTML += `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`; });
           }
           return;
         }
@@ -610,7 +621,7 @@
           .then(ms => {
             ms = expectArray(ms, 'Models');
             modelSelect.innerHTML = '<option value="All">모든 모델 All Models</option>';
-            ms.forEach(m => { modelSelect.innerHTML += `<option value="${m}">${m}</option>`; });
+            ms.forEach(m => { modelSelect.innerHTML += `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`; });
           })
           .catch(err => { 
             if (handleAuthExpiryIfNeeded(err)) return;
@@ -622,7 +633,7 @@
       function updatePersonFilter() {
         const select = document.getElementById('personFilter');
         select.innerHTML = '<option value="All">모든 담당자 All People</option>';
-        people.forEach(p => { select.innerHTML += `<option value="${p}">${p}</option>`; });
+        people.forEach(p => { select.innerHTML += `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`; });
       }
       
       function search() {
@@ -653,7 +664,7 @@
             if (handleAuthExpiryIfNeeded(err)) return;
             btn.disabled = false;
             btn.textContent = '검색 Search';
-            document.getElementById('itemsContainer').innerHTML = `<div class="error-message">Error: ${err.message}</div>`;
+            document.getElementById('itemsContainer').innerHTML = `<div class="error-message">Error: ${escapeHtml(err.message)}</div>`;
           });
       }
       
@@ -682,7 +693,8 @@
           } else if (dateAddedText && dateAddedText !== 'Unknown') {
             dateAdded = dateAddedText;
           }
-          const serialSafe = item.fullSerial.replace(/'/g, "\\'");
+          const serialRaw = String(item.fullSerial || '');
+          const serialSafe = serialRaw.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
           
           html += `
             <div class="item-card ${isSelected ? 'selected' : ''}" onclick="selectItem(event, '${serialSafe}')">
@@ -692,16 +704,16 @@
                 </span>
               </div>
               <div class="item-badge">
-                <span class="status-badge status-${item.statusKey || 'unknown'}">${item.status || 'Unknown'}</span>
+                <span class="status-badge status-${escapeHtml(item.statusKey || 'unknown')}">${escapeHtml(item.status || 'Unknown')}</span>
               </div>
               <div class="item-serial">
-                <span>${item.fullSerial}</span>
+                <span>${escapeHtml(serialRaw)}</span>
               </div>
               <div class="item-details">
-                <span class="item-detail">📦 ${item.type || 'N/A'} - ${item.model || 'N/A'}</span>
-                <span class="item-detail">📍 ${item.location || 'Unknown'}</span>
-                <span class="item-detail">📅 ${dateAdded}</span>
-                <span class="item-detail">👤 ${item.addedBy || 'Unknown'}</span>
+                <span class="item-detail">📦 ${escapeHtml(item.type || 'N/A')} - ${escapeHtml(item.model || 'N/A')}</span>
+                <span class="item-detail">📍 ${escapeHtml(item.location || 'Unknown')}</span>
+                <span class="item-detail">📅 ${escapeHtml(dateAdded)}</span>
+                <span class="item-detail">👤 ${escapeHtml(item.addedBy || 'Unknown')}</span>
               </div>
             </div>
           `;
@@ -729,7 +741,7 @@
         document.querySelectorAll('.item-card').forEach(c => c.classList.remove('selected'));
         if (evt && evt.currentTarget) evt.currentTarget.classList.add('selected');
         document.getElementById('historySection').style.display = 'block';
-        document.getElementById('currentStatus').innerHTML = `<span class="badge-white">${item.status || 'Unknown'}</span>`;
+        document.getElementById('currentStatus').innerHTML = `<span class="badge-white">${escapeHtml(item.status || 'Unknown')}</span>`;
         document.getElementById('currentLocation').textContent = item.location || 'Unknown';
         const grid = document.getElementById('historyGrid');
         grid.innerHTML = '<div class="loading">Loading history...</div>';
@@ -745,11 +757,11 @@
                 <div class="history-card">
                   <div class="history-row">
                     <span class="history-date">${formatDateDisplaySafe(m.date)}</span>
-                    <span class="history-action"><span class="status-badge status-${m.actionKey || 'unknown'}">${m.action || 'Unknown'}</span></span>
+                    <span class="history-action"><span class="status-badge status-${escapeHtml(m.actionKey || 'unknown')}">${escapeHtml(m.action || 'Unknown')}</span></span>
                   </div>
                   <div class="history-details">
-                    <span class="history-location">📍 ${m.location || ''}</span>
-                    <span class="history-person">👤 ${m.changedBy || 'Unknown'}</span>
+                    <span class="history-location">📍 ${escapeHtml(m.location || '')}</span>
+                    <span class="history-person">👤 ${escapeHtml(m.changedBy || 'Unknown')}</span>
                   </div>
                 </div>`;
             });

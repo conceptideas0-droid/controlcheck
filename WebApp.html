@@ -11,7 +11,7 @@
     <link rel="manifest" href="./manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="./frontend/icons/icon-192.png">
     <link rel="apple-touch-icon" href="./frontend/icons/icon-192.png">
-    <title>📦 서울사무실 현황 - Inventory System</title>
+    <title>&#x1F4E6; &#xC11C;&#xC6B8;&#xC0AC;&#xBB34;&#xC2E4; &#xD604;&#xD669; - Inventory System</title>
     <style>
       * {
         margin: 0;
@@ -744,6 +744,7 @@
     const SCANNER_FRONTEND_URL = 'https://conceptideas0-droid.github.io/controlcheck/QR/index.html';
       const MAIN_MENU_URL = 'https://conceptideas0-droid.github.io/controlcheck/WebApp.html';
       const BACKEND_API_BASE = 'https://inventory-proxy.conceptideas0.workers.dev/api';
+      const APP_ORIGIN = window.location.origin;
       const FETCH_TIMEOUT_MS = 30000;
       const PAGE_ROUTES = {
         AddItemsWeb: 'AddItemsWeb.html',
@@ -758,6 +759,7 @@
       const PREVIEW_STATS_CACHE_KEY = 'inventoryPreviewStatsCacheV1';
       const PREVIEW_STATS_CACHE_TTL_MS = 30000;
       const SESSION_EXPIRES_AT_KEY = 'inventoryLoginExpiresAt';
+      const SCANNER_TOKEN_SESSION_KEY = 'inventoryScannerToken';
       const SESSION_WARNING_SECONDS = 10 * 60;
       var sessionWatchTimer = null;
 
@@ -820,7 +822,7 @@
 
         function getAuthToken() {
           try {
-            return localStorage.getItem('inventoryLoginToken') || '';
+            return sessionStorage.getItem('inventoryLoginToken') || '';
           } catch (e) {
             return '';
           }
@@ -828,7 +830,7 @@
 
         function getStoredSessionExpiresAt() {
           try {
-            const raw = localStorage.getItem(SESSION_EXPIRES_AT_KEY);
+            const raw = sessionStorage.getItem(SESSION_EXPIRES_AT_KEY);
             const value = Number(raw || 0);
             return value > 0 ? value : 0;
           } catch (e) {
@@ -840,9 +842,9 @@
           try {
             const safe = Number(expiresAtMs || 0);
             if (safe > 0) {
-              localStorage.setItem(SESSION_EXPIRES_AT_KEY, String(safe));
+              sessionStorage.setItem(SESSION_EXPIRES_AT_KEY, String(safe));
             } else {
-              localStorage.removeItem(SESSION_EXPIRES_AT_KEY);
+              sessionStorage.removeItem(SESSION_EXPIRES_AT_KEY);
             }
           } catch (e) {}
         }
@@ -909,7 +911,7 @@
           const token = result && result.token ? String(result.token) : '';
           if (token) {
             try {
-              localStorage.setItem('inventoryLoginToken', token);
+              sessionStorage.setItem('inventoryLoginToken', token);
             } catch (e) {}
           }
           const expiresAt = getExpiresAtFromResult(result || {});
@@ -947,16 +949,14 @@
           const url = new URL(BACKEND_API_BASE);
           url.searchParams.set('api', action);
           const authToken = getAuthToken();
-          if (authToken) {
-            url.searchParams.set('authToken', authToken);
-            url.searchParams.set('token', authToken);
-          }
+          const headers = Object.assign({}, (options && options.headers) || {});
+          if (authToken) headers.Authorization = `Bearer ${authToken}`;
           Object.keys(params || {}).forEach(key => {
             if (params[key] !== undefined && params[key] !== null) {
               url.searchParams.set(key, String(params[key]));
             }
           });
-          return fetchWithTimeout(url.toString(), Object.assign({ mode: 'cors' }, options || {})).then(parseJsonResponse);
+          return fetchWithTimeout(url.toString(), Object.assign({ mode: 'cors', headers: headers }, options || {})).then(parseJsonResponse);
         }
 
         function callApiPost(action, payload, options) {
@@ -964,14 +964,15 @@
           url.searchParams.set('api', action);
           const body = Object.assign({}, payload || {});
           const authToken = getAuthToken();
+          const headers = { 'Content-Type': 'application/json' };
           if (authToken) {
             body.authToken = authToken;
-            url.searchParams.set('authToken', authToken); url.searchParams.set('token', authToken);
+            headers.Authorization = `Bearer ${authToken}`;
           }
           return fetchWithTimeout(url.toString(), Object.assign({
             method: 'POST',
             mode: 'cors',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headers,
             body: JSON.stringify(body)
           }, options || {})).then(parseJsonResponse);
         }
@@ -997,11 +998,11 @@
 
         function autoLoginFromToken(token) {
           if (!token) return;
-          callApiGet('validateLoginToken', { token })
+          callApiPost('validateLoginToken', { token: token })
             .then(data => {
               if (data && data.success && data.name) {
                 try {
-                  localStorage.setItem('inventoryLoginToken', token);
+                  sessionStorage.setItem('inventoryLoginToken', token);
                 } catch (e) {}
                 applySessionFromAuthResult({
                   token: token,
@@ -1148,7 +1149,7 @@
         loggedInUserName = name;
         window.loggedInUserName = name;
         try {
-          localStorage.setItem('inventoryLoggedInUser', name);
+          sessionStorage.setItem('inventoryLoggedInUser', name);
         } catch (e) {
           console.warn('Unable to store login locally', e);
         }
@@ -1162,8 +1163,8 @@
 
       function restoreSessionFromStorage() {
         try {
-          const stored = localStorage.getItem('inventoryLoggedInUser');
-          const token = localStorage.getItem('inventoryLoginToken');
+          const stored = sessionStorage.getItem('inventoryLoggedInUser');
+          const token = sessionStorage.getItem('inventoryLoginToken');
           if (stored && token) {
             setLoggedInUser(stored);
             return true;
@@ -1179,7 +1180,7 @@
         if (!token) {
           return Promise.resolve(false);
         }
-        return callApiGet('validateLoginToken', { token: token })
+        return callApiPost('validateLoginToken', { token: token })
           .then((result) => {
             if (result && result.success && result.name) {
               applySessionFromAuthResult({
@@ -1204,9 +1205,10 @@
         loggedInUserName = '';
         window.loggedInUserName = '';
         try {
-          localStorage.removeItem('inventoryLoggedInUser');
-          localStorage.removeItem('inventoryLoginToken');
-          localStorage.removeItem(SESSION_EXPIRES_AT_KEY);
+          sessionStorage.removeItem('inventoryLoggedInUser');
+          sessionStorage.removeItem('inventoryLoginToken');
+          sessionStorage.removeItem(SESSION_EXPIRES_AT_KEY);
+          sessionStorage.removeItem(SCANNER_TOKEN_SESSION_KEY);
         } catch (e) {
           console.warn('Unable to clear stored login', e);
         }
@@ -1276,7 +1278,10 @@
             }
             const returnUrl = encodeURIComponent(getFrontendRootUrl());
             const scannerModeParam = encodeURIComponent(result.mode || mode);
-            const redirectUrl = `${SCANNER_FRONTEND_URL}?token=${encodeURIComponent(result.token)}&mode=${scannerModeParam}&returnUrl=${returnUrl}`;
+            try {
+              sessionStorage.setItem(SCANNER_TOKEN_SESSION_KEY, String(result.token || ''));
+            } catch (e) {}
+            const redirectUrl = `${SCANNER_FRONTEND_URL}?mode=${scannerModeParam}&returnUrl=${returnUrl}`;
             document.getElementById('mainMenu').style.display = 'none';
             document.getElementById('pageContainer').style.display = 'block';
             loadPageIntoFrameUrl(redirectUrl, pageName);
@@ -1368,8 +1373,6 @@
       }
 
       window.onload = function() {
-        const params = new URLSearchParams(window.location.search);
-        const loginTokenParam = params.get('loginToken');
         const restored = restoreSessionFromStorage();
         if (restored) {
           validateStoredSessionToken().then(valid => {
@@ -1380,8 +1383,6 @@
               loadPreviewStats();
             }
           });
-        } else if (loginTokenParam) {
-          autoLoginFromToken(loginTokenParam);
         }
         const pageFrame = document.getElementById('pageFrame');
         pageFrame.addEventListener('load', () => {
@@ -1406,6 +1407,8 @@
         });
         window.addEventListener('message', (event) => {
           if (!event || !event.data) return;
+          if (event.origin !== APP_ORIGIN) return;
+          if (event.source !== pageFrame.contentWindow) return;
           if (event.data.type === 'inventory-page-height') {
             resizeFrameToContent(event.data.height);
             return;

@@ -101,11 +101,12 @@
     <div id="status"></div>
     <script>
       const BACKEND_API_BASE = 'https://inventory-proxy.conceptideas0.workers.dev/api';
+      const APP_ORIGIN = window.location.origin;
       const FETCH_TIMEOUT_MS = 30000;
       var currentItems = [], selectedItems = [], selectedMove = '';
       var allItemsCache = [];
       var allItemsLoaded = false;
-      function authToken() { return localStorage.getItem('inventoryLoginToken') || ''; }
+      function authToken() { return sessionStorage.getItem('inventoryLoginToken') || ''; }
       function parseJsonResponse(response) {
         return response.text().then(function(raw) {
           var data = null;
@@ -141,8 +142,8 @@
         var msg = err && err.message;
         if (!isAuthExpiredMessage(msg) && !isAuthRequiredMessage(msg)) return false;
         try {
-          localStorage.removeItem('inventoryLoginToken');
-          localStorage.removeItem('inventoryLoggedInUser');
+          sessionStorage.removeItem('inventoryLoginToken');
+          sessionStorage.removeItem('inventoryLoggedInUser');
         } catch (e) {}
         alert('세션이 만료되었습니다. Session expired. 다시 로그인해주세요. Please log in again.');
         goToMenu();
@@ -157,17 +158,28 @@
       }
       function callApiGet(a, p) {
         var url = new URL(BACKEND_API_BASE); url.searchParams.set('api', a);
-        var t = authToken(); if (t) { url.searchParams.set('authToken', t); url.searchParams.set('token', t); }
+        var t = authToken();
+        var headers = {};
+        if (t) { headers.Authorization = 'Bearer ' + t; }
         Object.keys(p || {}).forEach(k => { if (p[k] != null) url.searchParams.set(k, String(p[k])); });
-        return fetchWithTimeout(url.toString(), { mode: 'cors' }).then(parseJsonResponse);
+        return fetchWithTimeout(url.toString(), { mode: 'cors', headers: headers }).then(parseJsonResponse);
       }
       function callApiPost(a, p) {
         var url = new URL(BACKEND_API_BASE);
         url.searchParams.set('api', a);
         var b = Object.assign({}, p || {});
         var t = authToken();
-        if (t) { b.authToken = t; url.searchParams.set('authToken', t); url.searchParams.set('token', t); }
-        return fetchWithTimeout(url.toString(), { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) }).then(parseJsonResponse);
+        var headers = { 'Content-Type': 'application/json' };
+        if (t) { b.authToken = t; headers.Authorization = 'Bearer ' + t; }
+        return fetchWithTimeout(url.toString(), { method: 'POST', mode: 'cors', headers: headers, body: JSON.stringify(b) }).then(parseJsonResponse);
+      }
+      function escapeHtml(value) {
+        return String(value == null ? '' : value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
       }
       function toggleDate() { document.getElementById('movementDate').disabled = document.getElementById('useCurrentDate').checked; }
       function toggleLocation() {
@@ -220,7 +232,9 @@
         var c = document.getElementById(id); 
         c.innerHTML = items.length ? items.map(item => {
           const isSelected = selectedItems.some(sItem => sItem.fullSerial === item.fullSerial);
-          return `<div class="result-item ${isSelected ? 'selected' : ''}" onclick="handleItemClick(this, '${item.fullSerial}')"><div class="result-content"><div class="result-serial">${item.fullSerial}</div><div style="font-size:12px">${item.type} - ${item.model} | ${item.status}</div><div style="font-size:12px; color:#475569;">📍 ${item.location || 'Unknown'}</div></div></div>`;
+          const serial = String((item && item.fullSerial) || '');
+          const serialForJs = serial.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+          return `<div class="result-item ${isSelected ? 'selected' : ''}" onclick="handleItemClick(this, '${serialForJs}')"><div class="result-content"><div class="result-serial">${escapeHtml(serial)}</div><div style="font-size:12px">${escapeHtml(item.type)} - ${escapeHtml(item.model)} | ${escapeHtml(item.status)}</div><div style="font-size:12px; color:#475569;">📍 ${escapeHtml(item.location || 'Unknown')}</div></div></div>`;
         }).join('') : '<div style="padding:20px;text-align:center;">No items found</div>';
         c.style.display = 'block';
       }
@@ -258,7 +272,7 @@
         var payload = {
           items: selectedItems,
           movementKey: selectedMove,
-          personName: localStorage.getItem('inventoryLoggedInUser'),
+          personName: sessionStorage.getItem('inventoryLoggedInUser'),
           customLocation: customLoc,
           locationType: locType,
           notes: document.getElementById('notes').value.trim(),
@@ -275,14 +289,14 @@
             const status = document.getElementById('status');
             status.style.display = 'block';
             status.className = 'success';
-            status.innerHTML = `${result.message}<div class="status-actions"><button class="ok-btn" onclick="dismissStatus()">OK</button></div>`;
+            status.innerHTML = `${escapeHtml(result.message)}<div class="status-actions"><button class="ok-btn" onclick="dismissStatus()">OK</button></div>`;
           } else {
             const status = document.getElementById('status');
             status.style.display = 'block'; status.className = 'error';
-            let html = `⚠️ ${result.message}<br><br>Affected items:<br>`;
+            let html = `⚠️ ${escapeHtml(result.message)}<br><br>Affected items:<br>`;
             const problems = result.failed || [];
             problems.forEach(p => {
-              html += `<div class="preview-row" style="text-align:left; background:white; margin-top:5px; border-radius:8px; border:1px solid #e2e8f0; padding:10px;"><div><strong>${p.serial || p}</strong><div style="font-size:11px">${p.type || ''} | ${p.model || ''}</div><div style="font-size:11px; color:#334155;">📍 ${p.location || '-'}</div><div style="font-size:10px; color:red;">${p.message || 'Error'}</div></div></div>`;
+              html += `<div class="preview-row" style="text-align:left; background:white; margin-top:5px; border-radius:8px; border:1px solid #e2e8f0; padding:10px;"><div><strong>${escapeHtml(p.serial || p)}</strong><div style="font-size:11px">${escapeHtml(p.type || '')} | ${escapeHtml(p.model || '')}</div><div style="font-size:11px; color:#334155;">📍 ${escapeHtml(p.location || '-')}</div><div style="font-size:10px; color:red;">${escapeHtml(p.message || 'Error')}</div></div></div>`;
             });
             status.innerHTML = html + '<div class="status-actions"><button class="ok-btn" onclick="dismissStatus()">OK</button></div>';
           }
@@ -291,7 +305,7 @@
       }
       function goToMenu() {
         if (window.parent && window.parent !== window) {
-          window.parent.postMessage({ type: 'inventory-nav-menu' }, '*');
+          window.parent.postMessage({ type: 'inventory-nav-menu' }, APP_ORIGIN);
         }
       }
       window.onload = function() {
