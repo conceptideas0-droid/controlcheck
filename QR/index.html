@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Scanner · Inventory</title>
+    <style>
+      :root {
+        --bg-dark: #050A1F; --card: #f8f9fb; --card-border: rgba(226, 232, 240, 0.4);
+        --muted: #475569; --accent: #2563eb; --accent-dark: #1d4ed8; --warning: #dc2626; --success: #059669;
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0; font-family: "SF Pro Rounded", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+        background: linear-gradient(170deg, #f5f7fb 0%, #eef2f7 100%);
+        min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 12px; overflow-x: hidden; overflow-y: auto;
+      }
+      body.mode-add {
+        --accent: #0e9fbe;
+        --accent-dark: #0b7f98;
+        background: linear-gradient(170deg, #f5f7fb 0%, #ecf5f7 55%, #e8f1f4 100%);
+      }
+      body.mode-move {
+        --accent: #1f3f8e;
+        --accent-dark: #13295f;
+        background: linear-gradient(170deg, #f3f6fb 0%, #ebf0f9 55%, #e3e9f5 100%);
+      }
+      .scanner-page { width: 100%; max-width: 620px; max-height: none; overflow: visible; }
+      .hidden { display: none !important; }
+      .scanner-card { background: white; border-radius: 30px; padding: 28px; box-shadow: 0 25px 50px rgba(15, 23, 42, 0.25); border: 1px solid var(--card-border); max-height: none; overflow-x: hidden; overflow-y: auto; background-clip: padding-box; -webkit-mask-image: -webkit-radial-gradient(white, black); }
+      body.mode-move .scanner-card { background: linear-gradient(180deg, #ffffff, #f2f5ff); border-color: rgba(99, 102, 241, 0.22); box-shadow: 0 18px 34px -16px rgba(15, 23, 42, 0.32); }
+      body.mode-move .camera-overlay { background: linear-gradient(180deg, #eef2ff, #f8faff); border-color: rgba(99, 102, 241, 0.25); }
+      body.mode-move .card-title { color: #172554; }
+      body.mode-move .card-subtitle { color: #334155; }
+      .pill-btn { position: fixed; top: 12px; left: 12px; width: 42px; height: 42px; border-radius: 50%; border: none; background: #4a5568; color: white; font-weight: 700; font-size: 20px; cursor: pointer; z-index: 1200; display: none !important; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25); }
+      .card-header { margin-bottom: 18px; }
+      .card-title { margin: 0; font-size: 26px; color: #0f172a; }
+      .card-subtitle { margin: 6px 0 0; color: #475569; font-size: 14px; }
+      .scanner-config { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-bottom: 16px; }
+      .form-group label { display:block; font-size:12px; color:var(--muted); font-weight:600; margin-bottom:6px; letter-spacing:0.3px; }
+      input, textarea { width:100%; max-width:100%; min-width:0; display:block; border-radius:10px; border:1px solid var(--card-border); padding:10px 12px; font-size:16px; touch-action: manipulation; background:white; }
+      input:focus, textarea:focus { outline: none; }
+      input[type="date"] { -webkit-appearance: none; appearance: none; }
+      .camera-overlay { border:1px solid var(--card-border); border-radius:20px; padding:18px; background: linear-gradient(180deg, #f8fafc, #ffffff); }
+      .camera-frame { border-radius:16px; background: rgba(15, 23, 42, 0.06); min-height: 280px; margin-bottom: 16px; display:flex; align-items:center; justify-content:center; color:#94a3b8; overflow:hidden; }
+      #cameraContainer { width:100%; height:100%; }
+      #cameraVideo { width:100%; height:100%; object-fit:cover; border-radius:12px; background:#0f172a; }
+      .overlay-info { font-size:13px; color:var(--muted); margin-bottom:10px; }
+      .overlay-controls { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:10px; }
+      .primary-btn, .ghost-btn { border:none; border-radius:12px; padding:12px 18px; font-size:14px; font-weight:600; cursor:pointer; }
+      .primary-btn { background:var(--accent); color:white; box-shadow:0 10px 15px rgba(37,99,235,0.25); }
+      .ghost-btn { background:white; border:1px solid var(--card-border); color:var(--muted); }
+      .scanner-stats { display:block; font-size:13px; color:var(--muted); margin-bottom:10px; }
+      .scanner-stats span { display:block; line-height:1.5; }
+      .section-label { display:block; font-size:12px; color:var(--muted); font-weight:700; letter-spacing:0.3px; margin-bottom:6px; text-transform: uppercase; }
+      .location-options { display:grid; grid-template-columns: 1fr; gap:10px; align-items:stretch; }
+      .location-options label { display:grid; grid-template-columns: 18px 1fr; align-items:center; column-gap:8px; padding:10px 12px; border-radius:12px; border:1px solid var(--card-border); font-size:13px; cursor:pointer; background:white; }
+      .location-options input[type="radio"] { width: 18px !important; height: 18px; margin: 0; }
+      .movement-status-list { display:grid; grid-template-columns:1fr; gap:10px; align-items:stretch; }
+      .movement-status-list label { color:#0f172a; border-width:1px; }
+      .movement-status-list label.status-in { background:#ecfeff; border-color:#99f6e4; }
+      .movement-status-list label.status-out { background:#eff6ff; border-color:#bfdbfe; }
+      .movement-status-list label.status-problem { background:#fef2f2; border-color:#fecaca; }
+      .review-section { border-radius:20px; border:1px solid var(--card-border); background:#f9fafb; padding:20px; margin-top:14px; }
+      .preview-list { max-height:300px; overflow-y:auto; border-radius:14px; border:1px dashed rgba(148,163,184,0.4); background:white; padding:10px 8px; margin-bottom:12px; }
+      .preview-row { padding:10px 8px; border-bottom:1px solid rgba(148,163,184,0.25); display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:14px; }
+      .preview-main { flex: 1; min-width: 0; }
+      .preview-remove-btn { border:none; background:transparent; color:#dc2626; font-size:16px; font-weight:700; cursor:pointer; line-height:1; padding:4px 6px; border-radius:6px; }
+      .preview-remove-btn:hover { background:#fee2e2; }
+      .status-message { margin-top:12px; font-size:13px; padding:10px; border-radius:10px; display:none; text-align:center; }
+      .status-message.success { background:#dcfce7; color:#166534; border:1px solid #86efac; }
+      .status-message.error { background:#fee2e2; color:#b91c1c; border:1px solid #fca5a5; }
+      .toast { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:rgba(15,23,42,0.9); color:white; padding:10px 18px; border-radius:999px; opacity:0; transition:opacity 0.3s; z-index:10; }
+      .toast.show { opacity:1; }
+      .tag { font-size:11px; padding:2px 8px; border-radius:999px; background:#fee2e2; color:var(--warning); font-weight:600; }
+      .warning-box { font-size:13px; padding:12px 14px; border-radius:12px; border:1px dashed var(--card-border); color:var(--muted); background:#f8fafc; margin-bottom:18px; }
+      @media (max-width: 768px) {
+        .scanner-page { max-height: calc(100vh - 24px); overflow: visible; }
+        .scanner-card {
+          max-height: calc(100vh - 24px);
+          overflow-y: auto;
+          overflow-x: hidden;
+          -webkit-overflow-scrolling: touch;
+          border-radius: 24px;
+          clip-path: inset(0 round 24px);
+          border-color: rgba(203, 213, 225, 0.55);
+          box-shadow: 0 18px 34px -18px rgba(15, 23, 42, 0.28);
+        }
+        .camera-overlay,
+        .review-section {
+          border-radius: 18px;
+          border-color: rgba(203, 213, 225, 0.55);
+        }
+        .camera-frame {
+          border-radius: 16px;
+        }
+        .preview-list {
+          border-style: solid;
+          border-color: rgba(148, 163, 184, 0.3);
+          border-radius: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+      <main class="scanner-page">
+        <div id="tokenStatus" class="warning-box hidden">로딩... Scanner initializing…</div>
+        <div class="scanner-card hidden" id="scannerCard">
+          <button id="backToMenu" class="pill-btn">←</button>
+          <div class="card-header">
+            <h1 class="card-title" id="cardTitle">QR 등록 Add</h1>
+            <p class="card-subtitle" id="cardSubtitle">QR 스켄으로 아이템 등록. Scan QR codes.</p>
+          </div>
+        <section id="scannerOverlay" class="camera-overlay">
+          <div class="camera-frame" id="cameraContainer"><video id="cameraVideo" autoplay muted playsinline></video></div>
+          <div class="overlay-info"></div>
+          <div class="overlay-controls" id="scanEntryControls">
+            <button class="primary-btn" style="flex:1" id="startBtn">스캔 Scan</button>
+          </div>
+          <div class="overlay-controls hidden" id="scanActiveControls">
+            <button class="primary-btn" style="flex:1" id="finishBtn">완료 Finish</button>
+            <button class="ghost-btn" id="clearBtn">초기화 Clear List</button>
+          </div>
+          <div class="scanner-stats"><span>총 Total: <strong id="totalScanned">0</strong></span><span>마지막 Last: <strong id="lastSerial">—</strong></span></div>
+          <div class="live-preview-wrap">
+            <span class="section-label">스캔된 Scanned</span>
+            <div class="preview-list compact" id="livePreviewList"></div>
+          </div>
+        </section>
+        <section id="reviewSection" class="review-section hidden">
+          <div class="scanner-config">
+            <div class="form-group"><label id="dateLabel">날짜 Date *</label><input type="date" id="dateInput" /></div>
+            <div class="form-group hidden" id="movementStatusGroup">
+              <label>이동 상태 Status *</label>
+              <div class="movement-status-list">
+                <label class="status-in"><input type="radio" name="movementStatus" value="In" onchange="updateLocationOptions()" /> 입고 In</label>
+                <label class="status-out"><input type="radio" name="movementStatus" value="Out" checked onchange="updateLocationOptions()" /> 출고 Out</label>
+                <label class="status-problem"><input type="radio" name="movementStatus" value="Problem" onchange="updateLocationOptions()" /> 불량 Problem</label>
+              </div>
+            </div>
+            <div class="form-group" id="locationField">
+              <label id="locationLabel">위치 Location *</label>
+              <div class="location-options" id="locOptionsContainer"></div>
+            </div>
+            <div id="customLocationGroup" class="form-group hidden"><label>상세 위치 Specify Location *</label><input type="text" id="customLocation" placeholder="거래처, 상세 창고 등" /></div>
+            <div class="form-group" style="grid-column: 1/-1;"><label>메모 Notes</label><textarea id="notes" rows="2" placeholder="Optional"></textarea></div>
+          </div>
+          <span class="section-label">검토 Review</span>
+          <div class="preview-list" id="reviewList"></div>
+          <div class="overlay-controls" id="submitControls">
+            <button class="ghost-btn" style="flex:1" id="resumeBtn">스캔 추가 Resume Scanning</button>
+            <button class="primary-btn" style="flex:2" id="submitBtn">등록 Add</button>
+          </div>
+          <div id="submitStatus" class="status-message"></div>
+        </section>
+      </div>
+    </main>
+    <div id="toast" class="toast"></div>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+    <script>
+      const BACKEND_EXEC_URL = 'https://inventory-proxy.conceptideas0.workers.dev/api';
+      const FETCH_TIMEOUT_MS = 15000;
+      const SCANNER_INDEX_CACHE_KEY = 'inventoryScannerIndexCacheV1';
+      const SCANNER_INDEX_CACHE_TTL_MS = 30000;
+      let scannerToken = '', authToken = '', scannerMode = 'add', scannedItems = [], existingSerials = new Set();
+      let moveKnownSerials = new Set(), knownItemMeta = new Map();
+      let inventoryIndexReady = false;
+      let lastScanTimestamp = 0, cameraStream = null, scanRafId = null, scanCanvas = null, scanCtx = null, lastDecodeTs = 0;
+
+      function authTokenVal() { return localStorage.getItem('inventoryLoginToken') || ''; }
+      function parseJsonResponse(response) {
+        return response.text().then(raw => {
+          let data = null;
+          try { data = raw ? JSON.parse(raw) : null; } catch (e) {
+            const fallbackMessage = String(raw || '').trim() || 'Invalid JSON response';
+            throw new Error(fallbackMessage);
+          }
+          if (!response.ok) throw new Error((data && (data.message || data.error)) || `HTTP ${response.status}`);
+          return data;
+        });
+      }
+      function fetchWithTimeout(url, options) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+        return fetch(url, Object.assign({}, options || {}, { signal: controller.signal }))
+          .finally(() => clearTimeout(timer))
+          .catch(err => {
+            if (err && err.name === 'AbortError') throw new Error('Request timed out');
+            throw err;
+          });
+      }
+      function isAuthSessionError(msg) {
+        const lower = String(msg || '').toLowerCase();
+        return lower.includes('invalid or expired auth token') || lower.includes('authtoke');
+      }
+      function returnToMenu() {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'inventory-nav-menu' }, '*');
+        }
+      }
+      function normalizeSerial(value) {
+        return String(value || '').trim().replace(/\s+/g, ' ').toUpperCase();
+      }
+      function serialKeyCompact(value) {
+        return normalizeSerial(value).replace(/\s+/g, '');
+      }
+      function serialKeyLoose(value) {
+        return normalizeSerial(value).replace(/[^A-Z0-9]/g, '');
+      }
+      function serialVariants(value) {
+        const norm = normalizeSerial(value);
+        const compact = serialKeyCompact(value);
+        const loose = serialKeyLoose(value);
+        const list = [norm];
+        if (compact && compact !== norm) list.push(compact);
+        if (loose && !list.includes(loose)) list.push(loose);
+        return list.filter(Boolean);
+      }
+      function buildSerialFromItem(item) {
+        const full = normalizeSerial(item && item.fullSerial);
+        if (full) return full;
+        const manuf = normalizeSerial(item && item.manufNumber);
+        const code = normalizeSerial(item && item.serialCode);
+        const num = normalizeSerial(item && item.serialNumber);
+        const joined = normalizeSerial([manuf, code, num].filter(Boolean).join(' '));
+        return joined || '';
+      }
+      function setInventoryReadyState(ready) {
+        inventoryIndexReady = !!ready;
+        const startBtn = document.getElementById('startBtn');
+        if (startBtn) {
+          startBtn.disabled = !inventoryIndexReady;
+          startBtn.textContent = inventoryIndexReady ? '스캔 Scan' : 'Loading inventory...';
+        }
+      }
+      function apiGet(action, params) {
+        const url = new URL(BACKEND_EXEC_URL);
+        url.searchParams.set('api', action);
+        const token = authTokenVal();
+        if (token) url.searchParams.set('authToken', token);
+        Object.keys(params || {}).forEach(k => {
+          if (params[k] !== undefined && params[k] !== null) url.searchParams.set(k, String(params[k]));
+        });
+        return fetchWithTimeout(url.toString(), { mode: 'cors' }).then(parseJsonResponse);
+      }
+      function apiPost(action, payload) {
+        const url = new URL(BACKEND_EXEC_URL);
+        url.searchParams.set('api', action);
+        const body = Object.assign({}, payload || {});
+        const token = authTokenVal();
+        if (token) {
+          body.authToken = token;
+          url.searchParams.set('authToken', token);
+        }
+        return fetchWithTimeout(url.toString(), {
+          method: 'POST',
+          mode: 'cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        }).then(parseJsonResponse);
+      }
+      function toastMessage(msg, tone) {
+        const t = document.getElementById('toast'); t.textContent = msg;
+        t.style.background = tone === 'error' ? '#dc2626' : tone === 'success' ? '#059669' : 'rgba(15,23,42,0.9)';
+        t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1500);
+      }
+
+      function updateLocationOptions() {
+        const moveStatus = document.querySelector('input[name="movementStatus"]:checked')?.value || 'Out';
+        const isAddOrIn = scannerMode === 'add' || (scannerMode === 'move' && moveStatus === 'In');
+        let html = isAddOrIn 
+          ? '<label><input type="radio" name="location" value="Office" checked onchange="handleLocationToggle()"> 서울 사무실 Seoul Office</label>' 
+          : '<label><input type="radio" name="location" value="Suwon" checked onchange="handleLocationToggle()"> 수원 사무실 Suwon Office</label>';
+        html += '<label><input type="radio" name="location" value="기타 Other" onchange="handleLocationToggle()"> 기타 Other</label>';
+        document.getElementById('locOptionsContainer').innerHTML = html;
+        handleLocationToggle();
+      }
+
+      function handleLocationToggle() {
+        const isOther = document.querySelector('input[name="location"]:checked')?.value === '기타 Other';
+        document.getElementById('customLocationGroup').classList.toggle('hidden', !isOther);
+      }
+
+      function loadExistingSerials(retryCount) {
+        const retries = Number(retryCount || 0);
+        const readCachedIndex = () => {
+          try {
+            const raw = sessionStorage.getItem(SCANNER_INDEX_CACHE_KEY);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (!parsed || !parsed.ts || !parsed.data) return null;
+            if ((Date.now() - Number(parsed.ts || 0)) > SCANNER_INDEX_CACHE_TTL_MS) return null;
+            return parsed.data;
+          } catch (e) {
+            return null;
+          }
+        };
+        const writeCachedIndex = (data) => {
+          try {
+            sessionStorage.setItem(SCANNER_INDEX_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: data }));
+          } catch (e) {}
+        };
+        const applyIndex = (index) => {
+          const items = Array.isArray(index && index.inventory) ? index.inventory : [];
+          const knownSerials = Array.isArray(index && index.knownSerials) ? index.knownSerials : [];
+          existingSerials = new Set();
+          moveKnownSerials = new Set();
+          knownItemMeta = new Map();
+          items.forEach(item => {
+            const serial = normalizeSerial((item && item.serial) || '');
+            if (!serial) return;
+            serialVariants(serial).forEach(v => {
+              existingSerials.add(v);
+              moveKnownSerials.add(v);
+              knownItemMeta.set(v, {
+                type: String((item && item.type) || '').trim(),
+                model: String((item && item.model) || '').trim(),
+                location: String((item && item.location) || '').trim()
+              });
+            });
+          });
+          knownSerials.forEach(raw => {
+            const serial = normalizeSerial(raw);
+            if (!serial) return;
+            serialVariants(serial).forEach(v => moveKnownSerials.add(v));
+          });
+        };
+        setInventoryReadyState(false);
+        if (retries === 0) {
+          const cachedIndex = readCachedIndex();
+          if (cachedIndex) {
+            applyIndex(cachedIndex);
+            setInventoryReadyState(true);
+            renderLivePreview();
+            return Promise.resolve(true);
+          }
+        }
+        return apiGet('getScannerIndex').then(index => {
+          applyIndex(index);
+          writeCachedIndex(index);
+          setInventoryReadyState(true);
+          renderLivePreview();
+          return true;
+        }).catch(err => {
+          if (!isAuthSessionError(err && err.message) && retries < 2) {
+            return new Promise(resolve => setTimeout(resolve, 350))
+              .then(() => loadExistingSerials(retries + 1));
+          }
+          setInventoryReadyState(false);
+          if (isAuthSessionError(err && err.message)) {
+            alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+            returnToMenu();
+            return false;
+          }
+          console.error('Failed to load inventory index', err);
+          toastMessage('Inventory index load failed', 'error');
+          return false;
+        });
+      }
+
+      function validateScannerTokenWithRetry(retryCount) {
+        const retries = Number(retryCount || 0);
+        return apiGet('validateScannerToken', { token: scannerToken })
+          .then(result => {
+            if (result && result.valid) return true;
+            if (retries < 2) {
+              return new Promise(resolve => setTimeout(resolve, 300))
+                .then(() => validateScannerTokenWithRetry(retries + 1));
+            }
+            return false;
+          })
+          .catch(err => {
+            if (isAuthSessionError(err && err.message)) throw err;
+            if (retries < 2) {
+              return new Promise(resolve => setTimeout(resolve, 300))
+                .then(() => validateScannerTokenWithRetry(retries + 1));
+            }
+            throw err;
+          });
+      }
+
+      function handleScanSuccess(text) {
+        if (!inventoryIndexReady) return toastMessage('Inventory still loading', 'error');
+        if (Date.now() - lastScanTimestamp < 800) return; lastScanTimestamp = Date.now();
+        if (!text.includes('|')) return;
+        const s = text.split('|').map(v => v.trim()); if (s.length < 3) return;
+        const full = normalizeSerial([s[0], s[1], s[2]].join(' '));
+        if (scannedItems.some(i => i.fullSerial === full)) return toastMessage('Already scanned', 'error');
+        const variants = serialVariants(full);
+        const inInventory = variants.some(v => existingSerials.has(v));
+        const knownForMove = variants.some(v => moveKnownSerials.has(v));
+        const meta = variants.map(v => knownItemMeta.get(v)).find(Boolean) || {};
+        const itemType = String((s[3] || meta.type || '')).trim();
+        const itemModel = String((s[4] || meta.model || '')).trim();
+        const itemLocation = String((s[5] || meta.location || '')).trim();
+        scannedItems.push({
+          fullSerial: full,
+          itemType: itemType,
+          itemModel: itemModel,
+          itemLocation: itemLocation,
+          alreadyExists: scannerMode === 'move' ? knownForMove : inInventory
+        });
+        document.getElementById('totalScanned').textContent = scannedItems.length;
+        document.getElementById('lastSerial').textContent = full;
+        renderLivePreview();
+        if (scannerMode === 'add' && inInventory) {
+          toastMessage('Duplicate: already registered', 'error');
+        } else if (scannerMode === 'move' && !knownForMove) {
+          toastMessage('Not found in inventory', 'error');
+        } else {
+          toastMessage(full, 'success');
+        }
+      }
+
+      function renderLivePreview() {
+        const list = document.getElementById('livePreviewList'); list.innerHTML = '';
+        scannedItems.slice().reverse().forEach((item, idx) => {
+          const originalIndex = scannedItems.length - 1 - idx;
+          const tagText = scannerMode === 'add' ? (item.alreadyExists ? '이미 등록' : '') : (item.alreadyExists ? '' : '없음');
+          const tagHtml = tagText ? `<span class="tag">${tagText}</span>` : '';
+          const locationHtml = scannerMode === 'move'
+            ? `<div style="font-size:11px; color:#334155;">📍 ${item.itemLocation || '-'}</div>`
+            : '';
+          const d = document.createElement('div'); d.className = 'preview-row';
+          d.innerHTML = `<div class="preview-main"><strong>${item.fullSerial}</strong><div style="font-size:11px; color:#475569;">${item.itemType || '-'} | ${item.itemModel || '-'}</div>${locationHtml}</div><div style="display:flex; align-items:center; gap:6px;">${tagHtml}<button type="button" class="preview-remove-btn" onclick="removeScannedItemByIndex(${originalIndex})" aria-label="Remove scanned item">×</button></div>`;
+          list.appendChild(d);
+        });
+      }
+
+      async function startCamera() {
+        const video = document.getElementById('cameraVideo');
+        if (!video) throw new Error('Camera element not found');
+        if (cameraStream) return;
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('Camera is not supported on this device/browser');
+        }
+
+        video.setAttribute('playsinline', 'true');
+        video.setAttribute('webkit-playsinline', 'true');
+        video.muted = true;
+
+        const constraints = {
+          audio: false,
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        };
+
+        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = cameraStream;
+        await video.play();
+
+        if (!scanCanvas) scanCanvas = document.createElement('canvas');
+        if (!scanCtx) scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
+        lastDecodeTs = 0;
+        scanLoop();
+      }
+
+      function stopCamera() {
+        if (scanRafId) {
+          cancelAnimationFrame(scanRafId);
+          scanRafId = null;
+        }
+        const video = document.getElementById('cameraVideo');
+        if (video) {
+          try { video.pause(); } catch (e) {}
+          video.srcObject = null;
+        }
+        if (cameraStream) {
+          cameraStream.getTracks().forEach(track => {
+            try { track.stop(); } catch (e) {}
+          });
+          cameraStream = null;
+        }
+      }
+
+      function scanLoop() {
+        const video = document.getElementById('cameraVideo');
+        if (!cameraStream || !video) return;
+
+        scanRafId = requestAnimationFrame(scanLoop);
+        const now = performance.now();
+        if (now - lastDecodeTs < 100) return;
+        lastDecodeTs = now;
+
+        if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return;
+        const vw = video.videoWidth || 0;
+        const vh = video.videoHeight || 0;
+        if (!vw || !vh || !scanCtx || !scanCanvas) return;
+
+        scanCanvas.width = vw;
+        scanCanvas.height = vh;
+        scanCtx.drawImage(video, 0, 0, vw, vh);
+        const imageData = scanCtx.getImageData(0, 0, vw, vh);
+        const qr = (typeof jsQR === 'function') ? jsQR(imageData.data, vw, vh, { inversionAttempts: 'dontInvert' }) : null;
+        if (qr && qr.data) handleScanSuccess(qr.data);
+      }
+
+      document.getElementById('startBtn').addEventListener('click', async () => {
+        try {
+          await startCamera();
+          document.getElementById('scanEntryControls').classList.add('hidden');
+          document.getElementById('scanActiveControls').classList.remove('hidden');
+        } catch (err) {
+          toastMessage((err && err.message) ? err.message : 'Camera start failed', 'error');
+        }
+      });
+
+      document.getElementById('finishBtn').addEventListener('click', () => {
+        stopCamera();
+        document.getElementById('scannerOverlay').classList.add('hidden');
+        document.getElementById('reviewSection').classList.remove('hidden');
+        updateLocationOptions(); renderReviewList();
+      });
+
+      function renderReviewList() {
+        document.getElementById('reviewList').innerHTML = scannedItems.map((item, idx) => {
+          const tagText = scannerMode === 'add' ? (item.alreadyExists ? '이미 등록' : '') : (item.alreadyExists ? '' : '없음');
+          const tagHtml = tagText ? `<span class="tag">${tagText}</span>` : '';
+          const locationHtml = scannerMode === 'move'
+            ? `<div style="font-size:11px; color:#334155;">📍 ${item.itemLocation || '-'}</div>`
+            : '';
+          return `<div class="preview-row"><div class="preview-main"><strong>${item.fullSerial}</strong><div style="font-size:11px; color:#475569;">${item.itemType || '-'} | ${item.itemModel || '-'}</div>${locationHtml}</div><div style="display:flex; align-items:center; gap:6px;">${tagHtml}<button type="button" class="preview-remove-btn" onclick="removeScannedItemByIndex(${idx})" aria-label="Remove scanned item">×</button></div></div>`;
+        }).join('');
+      }
+
+      function removeScannedItemByIndex(index) {
+        const safeIndex = Number(index);
+        if (isNaN(safeIndex) || safeIndex < 0 || safeIndex >= scannedItems.length) return;
+        scannedItems.splice(safeIndex, 1);
+        syncScannedStats();
+        renderLivePreview();
+        renderReviewList();
+      }
+
+      function syncScannedStats() {
+        document.getElementById('totalScanned').textContent = scannedItems.length;
+        document.getElementById('lastSerial').textContent = scannedItems.length ? scannedItems[scannedItems.length - 1].fullSerial : '—';
+      }
+
+      function dismissSubmitStatus() {
+        const status = document.getElementById('submitStatus');
+        status.style.display = 'none';
+        status.textContent = '';
+      }
+
+      document.getElementById('submitBtn').addEventListener('click', async () => {
+        dismissSubmitStatus();
+        const locType = document.querySelector('input[name="location"]:checked')?.value || '';
+        const customLoc = document.getElementById('customLocation').value.trim();
+        if (locType === '기타 Other' && !customLoc) return alert('상세 위치를 입력하세요.');
+        
+        const itemsToSubmit = scannerMode === 'move' ? scannedItems.filter(i => i.alreadyExists) : scannedItems.filter(i => !i.alreadyExists);
+        if (!itemsToSubmit.length) return alert(scannerMode === 'move' ? '이동할 수 있는 아이템이 없습니다.' : '모든 아이템이 이미 등록되어 있습니다.');
+
+        const btn = document.getElementById('submitBtn'); btn.disabled = true;
+        const moveKey = document.querySelector('input[name="movementStatus"]:checked')?.value || 'In';
+        const payload = { authToken: authTokenVal(), token: scannerToken, scannedItems: JSON.stringify(itemsToSubmit), locationType: locType, customLocation: customLoc, notes: document.getElementById('notes').value.trim(), dateAdded: new Date(document.getElementById('dateInput').value + 'T12:00:00').toISOString(), movementKey: moveKey, movementDate: new Date(document.getElementById('dateInput').value + 'T12:00:00').toISOString() };
+
+        try {
+          const result = await apiPost('submitScannedItems', payload);
+          if (result.success && (!result.failed || result.failed.length === 0)) {
+            alert('완료: ' + result.message); returnToMenu();
+          } else {
+            if (result && result.message && isAuthSessionError(result.message)) {
+              alert('세션이 만료되었습니다. 다시 로그인해주세요.'); returnToMenu(); return;
+            }
+            if (scannerMode === 'move' && Array.isArray(result.moved) && result.moved.length) {
+              const movedSet = new Set(result.moved.map(serial => normalizeSerial(serial)));
+              scannedItems = scannedItems.filter(item => !movedSet.has(normalizeSerial(item.fullSerial)));
+              syncScannedStats();
+              renderLivePreview();
+              renderReviewList();
+            }
+            const status = document.getElementById('submitStatus');
+            status.style.display = 'block'; status.className = 'status-message error';
+            let html = `⚠️ ${result.message}<br><br>확인 필요 품목 Affected items:<br>`;
+            const problems = result.failed || result.duplicates || [];
+            problems.forEach(p => {
+              html += `<div class="preview-row" style="text-align:left; background:white; margin-top:5px;"><div><strong>${p.serial || p}</strong><div style="font-size:11px">${p.type || ''} | ${p.model || ''}</div><div style="font-size:10px; color:red;">${p.message || 'Already registered'}</div></div></div>`;
+            });
+            status.innerHTML = html + '<div style="margin-top:10px;"><button type="button" id="submitStatusOkBtn" class="primary-btn" style="padding:8px 16px;">OK</button></div>';
+            const okBtn = document.getElementById('submitStatusOkBtn');
+            if (okBtn) okBtn.addEventListener('click', dismissSubmitStatus, { once: true });
+          }
+        } catch (e) {
+          if (isAuthSessionError(e && e.message)) {
+            alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+            returnToMenu();
+          } else {
+            alert('Request failed: ' + e.message);
+          }
+        }
+        btn.disabled = false;
+      });
+
+      document.getElementById('backToMenu').addEventListener('click', () => { stopCamera(); returnToMenu(); });
+      document.getElementById('resumeBtn').addEventListener('click', () => {
+        document.getElementById('reviewSection').classList.add('hidden');
+        document.getElementById('scannerOverlay').classList.remove('hidden');
+        document.getElementById('scanActiveControls').classList.add('hidden');
+        document.getElementById('scanEntryControls').classList.remove('hidden');
+      });
+
+      window.addEventListener('DOMContentLoaded', () => {
+        const p = new URLSearchParams(window.location.search);
+        scannerToken = p.get('token') || ''; scannerMode = p.get('mode') === 'move' ? 'move' : 'add';
+        document.body.classList.remove('mode-add', 'mode-move');
+        document.body.classList.add(scannerMode === 'move' ? 'mode-move' : 'mode-add');
+        authToken = authTokenVal();
+        if (!authToken) { alert('세션이 만료되었습니다. 다시 로그인해주세요.'); returnToMenu(); return; }
+        document.getElementById('cardTitle').textContent = scannerMode === 'move' ? 'QR 이동 Move' : 'QR 등록 Add';
+        document.getElementById('cardSubtitle').textContent = scannerMode === 'move' ? '스캔로 이동합니다. Scan to move.' : '스캔로 등록합니다. Scan to add.';
+        document.getElementById('submitBtn').textContent = scannerMode === 'move' ? '이동하기 Move Items' : '등록 Add';
+        document.getElementById('dateInput').value = new Date(Date.now() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 10);
+        document.getElementById('movementStatusGroup').classList.toggle('hidden', scannerMode !== 'move');
+        document.getElementById('scannerCard').classList.remove('hidden');
+        Promise.all([
+          validateScannerTokenWithRetry(),
+          loadExistingSerials()
+        ]).then(results => {
+          const tokenValid = Boolean(results[0]);
+          if (!tokenValid) {
+            alert('스캐너 토큰이 만료되었습니다. 다시 시도해주세요.');
+            returnToMenu();
+          }
+        }).catch(err => {
+          if (isAuthSessionError(err && err.message)) {
+            alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+          } else {
+            alert('Scanner token validation failed: ' + (err && err.message ? err.message : 'Unknown error'));
+          }
+          returnToMenu();
+        });
+      });
+    </script>
+  </body>
+</html>
+
+
