@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow" />
-    <title>Scanner · Inventory</title>
+    <title>Scanner Â· Inventory</title>
     <style>
       :root {
         --bg-dark: #050A1F; --card: #f8f9fb; --card-border: rgba(226, 232, 240, 0.4);
@@ -106,52 +106,52 @@
   </head>
   <body>
       <main class="scanner-page">
-        <div id="tokenStatus" class="warning-box hidden">로딩... Scanner initializing…</div>
+        <div id="tokenStatus" class="warning-box hidden">ë¡œë”©... Scanner initializingâ€¦</div>
         <div class="scanner-card hidden" id="scannerCard">
-          <button id="backToMenu" class="pill-btn">←</button>
+          <button id="backToMenu" class="pill-btn">â†</button>
           <div class="card-header">
-            <h1 class="card-title" id="cardTitle">QR 등록 Add</h1>
-            <p class="card-subtitle" id="cardSubtitle">QR 스켄으로 아이템 등록. Scan QR codes.</p>
+            <h1 class="card-title" id="cardTitle">QR ë“±ë¡ Add</h1>
+            <p class="card-subtitle" id="cardSubtitle">QR ìŠ¤ì¼„ìœ¼ë¡œ ì•„ì´í…œ ë“±ë¡. Scan QR codes.</p>
           </div>
         <section id="scannerOverlay" class="camera-overlay">
           <div class="camera-frame" id="cameraContainer"><video id="cameraVideo" autoplay muted playsinline></video></div>
           <div class="overlay-info"></div>
           <div class="overlay-controls" id="scanEntryControls">
-            <button class="primary-btn" style="flex:1" id="startBtn">스캔 Scan</button>
+            <button class="primary-btn" style="flex:1" id="startBtn">ìŠ¤ìº” Scan</button>
           </div>
           <div class="overlay-controls hidden" id="scanActiveControls">
-            <button class="primary-btn" style="flex:1" id="finishBtn">완료 Finish</button>
-            <button class="ghost-btn" id="clearBtn">초기화 Clear List</button>
+            <button class="primary-btn" style="flex:1" id="finishBtn">ì™„ë£Œ Finish</button>
+            <button class="ghost-btn" id="clearBtn">ì´ˆê¸°í™” Clear List</button>
           </div>
-          <div class="scanner-stats"><span>총 Total: <strong id="totalScanned">0</strong></span><span>마지막 Last: <strong id="lastSerial">—</strong></span></div>
+          <div class="scanner-stats"><span>ì´ Total: <strong id="totalScanned">0</strong></span><span>ë§ˆì§€ë§‰ Last: <strong id="lastSerial">â€”</strong></span></div>
           <div class="live-preview-wrap">
-            <span class="section-label">스캔된 Scanned</span>
+            <span class="section-label">ìŠ¤ìº”ëœ Scanned</span>
             <div class="preview-list compact" id="livePreviewList"></div>
           </div>
         </section>
         <section id="reviewSection" class="review-section hidden">
           <div class="scanner-config">
-            <div class="form-group"><label id="dateLabel">날짜 Date *</label><input type="date" id="dateInput" /></div>
+            <div class="form-group"><label id="dateLabel">ë‚ ì§œ Date *</label><input type="date" id="dateInput" /></div>
             <div class="form-group hidden" id="movementStatusGroup">
-              <label>이동 상태 Status *</label>
+              <label>ì´ë™ ìƒíƒœ Status *</label>
               <div class="movement-status-list">
-                <label class="status-in"><input type="radio" name="movementStatus" value="In" onchange="updateLocationOptions()" /> 입고 In</label>
-                <label class="status-out"><input type="radio" name="movementStatus" value="Out" checked onchange="updateLocationOptions()" /> 출고 Out</label>
-                <label class="status-problem"><input type="radio" name="movementStatus" value="Problem" onchange="updateLocationOptions()" /> 불량 Problem</label>
+                <label class="status-in"><input type="radio" name="movementStatus" value="In" onchange="updateLocationOptions()" /> ìž…ê³  In</label>
+                <label class="status-out"><input type="radio" name="movementStatus" value="Out" checked onchange="updateLocationOptions()" /> ì¶œê³  Out</label>
+                <label class="status-problem"><input type="radio" name="movementStatus" value="Problem" onchange="updateLocationOptions()" /> ë¶ˆëŸ‰ Problem</label>
               </div>
             </div>
             <div class="form-group" id="locationField">
-              <label id="locationLabel">위치 Location *</label>
+              <label id="locationLabel">ìœ„ì¹˜ Location *</label>
               <div class="location-options" id="locOptionsContainer"></div>
             </div>
-            <div id="customLocationGroup" class="form-group hidden"><label>상세 위치 Specify Location *</label><input type="text" id="customLocation" placeholder="거래처, 상세 창고 등" /></div>
-            <div class="form-group" style="grid-column: 1/-1;"><label>메모 Notes</label><textarea id="notes" rows="2" placeholder="Optional"></textarea></div>
+            <div id="customLocationGroup" class="form-group hidden"><label>ìƒì„¸ ìœ„ì¹˜ Specify Location *</label><input type="text" id="customLocation" placeholder="병원 이름 등" /></div>
+            <div class="form-group" style="grid-column: 1/-1;"><label>ë©”ëª¨ Notes</label><textarea id="notes" rows="2" placeholder="Optional"></textarea></div>
           </div>
-          <span class="section-label">검토 Review</span>
+          <span class="section-label">ê²€í†  Review</span>
           <div class="preview-list" id="reviewList"></div>
           <div class="overlay-controls" id="submitControls">
-            <button class="ghost-btn" style="flex:1" id="resumeBtn">스캔 추가 Resume Scanning</button>
-            <button class="primary-btn" style="flex:2" id="submitBtn">등록 Add</button>
+            <button class="ghost-btn" style="flex:1" id="resumeBtn">ìŠ¤ìº” ì¶”ê°€ Resume Scanning</button>
+            <button class="primary-btn" style="flex:2" id="submitBtn">ë“±ë¡ Add</button>
           </div>
           <div id="submitStatus" class="status-message"></div>
         </section>
@@ -232,7 +232,7 @@
         const startBtn = document.getElementById('startBtn');
         if (startBtn) {
           startBtn.disabled = !inventoryIndexReady;
-          startBtn.textContent = inventoryIndexReady ? '스캔 Scan' : 'Loading inventory...';
+          startBtn.textContent = inventoryIndexReady ? 'ìŠ¤ìº” Scan' : 'Loading inventory...';
         }
       }
       function apiGet(action, params) {
@@ -271,15 +271,15 @@
         const moveStatus = document.querySelector('input[name="movementStatus"]:checked')?.value || 'Out';
         const isAddOrIn = scannerMode === 'add' || (scannerMode === 'move' && moveStatus === 'In');
         let html = isAddOrIn 
-          ? '<label><input type="radio" name="location" value="Office" checked onchange="handleLocationToggle()"> 서울 사무실 Seoul Office</label>' 
-          : '<label><input type="radio" name="location" value="Suwon" checked onchange="handleLocationToggle()"> 수원 사무실 Suwon Office</label>';
-        html += '<label><input type="radio" name="location" value="기타 Other" onchange="handleLocationToggle()"> 기타 Other</label>';
+          ? '<label><input type="radio" name="location" value="Office" checked onchange="handleLocationToggle()"> ì„œìš¸ ì‚¬ë¬´ì‹¤ Seoul Office</label>' 
+          : '<label><input type="radio" name="location" value="Suwon" checked onchange="handleLocationToggle()"> ìˆ˜ì› ì‚¬ë¬´ì‹¤ Suwon Office</label>';
+        html += '<label><input type="radio" name="location" value="ê¸°íƒ€ Other" onchange="handleLocationToggle()"> ê¸°íƒ€ Other</label>';
         document.getElementById('locOptionsContainer').innerHTML = html;
         handleLocationToggle();
       }
 
       function handleLocationToggle() {
-        const isOther = document.querySelector('input[name="location"]:checked')?.value === '기타 Other';
+        const isOther = document.querySelector('input[name="location"]:checked')?.value === 'ê¸°íƒ€ Other';
         document.getElementById('customLocationGroup').classList.toggle('hidden', !isOther);
       }
 
@@ -350,7 +350,7 @@
           }
           setInventoryReadyState(false);
           if (isAuthSessionError(err && err.message)) {
-            alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+            alert('ì„¸ì…˜ì´ ë§Œë£Œë˜ì—ˆìŠµë‹ˆë‹¤. ë‹¤ì‹œ ë¡œê·¸ì¸í•´ì£¼ì„¸ìš”.');
             returnToMenu();
             return false;
           }
@@ -418,13 +418,13 @@
         const list = document.getElementById('livePreviewList'); list.innerHTML = '';
         scannedItems.slice().reverse().forEach((item, idx) => {
           const originalIndex = scannedItems.length - 1 - idx;
-          const tagText = scannerMode === 'add' ? (item.alreadyExists ? '이미 등록' : '') : (item.alreadyExists ? '' : '없음');
+          const tagText = scannerMode === 'add' ? (item.alreadyExists ? 'ì´ë¯¸ ë“±ë¡' : '') : (item.alreadyExists ? '' : 'ì—†ìŒ');
           const tagHtml = tagText ? `<span class="tag">${tagText}</span>` : '';
           const locationHtml = scannerMode === 'move'
-            ? `<div style="font-size:11px; color:#334155;">📍 ${item.itemLocation || '-'}</div>`
+            ? `<div style="font-size:11px; color:#334155;">ðŸ“ ${item.itemLocation || '-'}</div>`
             : '';
           const d = document.createElement('div'); d.className = 'preview-row';
-          d.innerHTML = `<div class="preview-main"><strong>${item.fullSerial}</strong><div style="font-size:11px; color:#475569;">${item.itemType || '-'} | ${item.itemModel || '-'}</div>${locationHtml}</div><div style="display:flex; align-items:center; gap:6px;">${tagHtml}<button type="button" class="preview-remove-btn" onclick="removeScannedItemByIndex(${originalIndex})" aria-label="Remove scanned item">×</button></div>`;
+          d.innerHTML = `<div class="preview-main"><strong>${item.fullSerial}</strong><div style="font-size:11px; color:#475569;">${item.itemType || '-'} | ${item.itemModel || '-'}</div>${locationHtml}</div><div style="display:flex; align-items:center; gap:6px;">${tagHtml}<button type="button" class="preview-remove-btn" onclick="removeScannedItemByIndex(${originalIndex})" aria-label="Remove scanned item">Ã—</button></div>`;
           list.appendChild(d);
         });
       }
@@ -519,12 +519,12 @@
 
       function renderReviewList() {
         document.getElementById('reviewList').innerHTML = scannedItems.map((item, idx) => {
-          const tagText = scannerMode === 'add' ? (item.alreadyExists ? '이미 등록' : '') : (item.alreadyExists ? '' : '없음');
+          const tagText = scannerMode === 'add' ? (item.alreadyExists ? 'ì´ë¯¸ ë“±ë¡' : '') : (item.alreadyExists ? '' : 'ì—†ìŒ');
           const tagHtml = tagText ? `<span class="tag">${tagText}</span>` : '';
           const locationHtml = scannerMode === 'move'
-            ? `<div style="font-size:11px; color:#334155;">📍 ${item.itemLocation || '-'}</div>`
+            ? `<div style="font-size:11px; color:#334155;">ðŸ“ ${item.itemLocation || '-'}</div>`
             : '';
-          return `<div class="preview-row"><div class="preview-main"><strong>${item.fullSerial}</strong><div style="font-size:11px; color:#475569;">${item.itemType || '-'} | ${item.itemModel || '-'}</div>${locationHtml}</div><div style="display:flex; align-items:center; gap:6px;">${tagHtml}<button type="button" class="preview-remove-btn" onclick="removeScannedItemByIndex(${idx})" aria-label="Remove scanned item">×</button></div></div>`;
+          return `<div class="preview-row"><div class="preview-main"><strong>${item.fullSerial}</strong><div style="font-size:11px; color:#475569;">${item.itemType || '-'} | ${item.itemModel || '-'}</div>${locationHtml}</div><div style="display:flex; align-items:center; gap:6px;">${tagHtml}<button type="button" class="preview-remove-btn" onclick="removeScannedItemByIndex(${idx})" aria-label="Remove scanned item">Ã—</button></div></div>`;
         }).join('');
       }
 
@@ -539,7 +539,7 @@
 
       function syncScannedStats() {
         document.getElementById('totalScanned').textContent = scannedItems.length;
-        document.getElementById('lastSerial').textContent = scannedItems.length ? scannedItems[scannedItems.length - 1].fullSerial : '—';
+        document.getElementById('lastSerial').textContent = scannedItems.length ? scannedItems[scannedItems.length - 1].fullSerial : 'â€”';
       }
 
       function dismissSubmitStatus() {
@@ -552,10 +552,10 @@
         dismissSubmitStatus();
         const locType = document.querySelector('input[name="location"]:checked')?.value || '';
         const customLoc = document.getElementById('customLocation').value.trim();
-        if (locType === '기타 Other' && !customLoc) return alert('상세 위치를 입력하세요.');
+        if (locType === 'ê¸°íƒ€ Other' && !customLoc) return alert('ìƒì„¸ ìœ„ì¹˜ë¥¼ ìž…ë ¥í•˜ì„¸ìš”.');
         
         const itemsToSubmit = scannerMode === 'move' ? scannedItems.filter(i => i.alreadyExists) : scannedItems.filter(i => !i.alreadyExists);
-        if (!itemsToSubmit.length) return alert(scannerMode === 'move' ? '이동할 수 있는 아이템이 없습니다.' : '모든 아이템이 이미 등록되어 있습니다.');
+        if (!itemsToSubmit.length) return alert(scannerMode === 'move' ? 'ì´ë™í•  ìˆ˜ ìžˆëŠ” ì•„ì´í…œì´ ì—†ìŠµë‹ˆë‹¤.' : 'ëª¨ë“  ì•„ì´í…œì´ ì´ë¯¸ ë“±ë¡ë˜ì–´ ìžˆìŠµë‹ˆë‹¤.');
 
         const btn = document.getElementById('submitBtn'); btn.disabled = true;
         const moveKey = document.querySelector('input[name="movementStatus"]:checked')?.value || 'In';
@@ -564,10 +564,10 @@
         try {
           const result = await apiPost('submitScannedItems', payload);
           if (result.success && (!result.failed || result.failed.length === 0)) {
-            alert('완료: ' + result.message); returnToMenu();
+            alert('ì™„ë£Œ: ' + result.message); returnToMenu();
           } else {
             if (result && result.message && isAuthSessionError(result.message)) {
-              alert('세션이 만료되었습니다. 다시 로그인해주세요.'); returnToMenu(); return;
+              alert('ì„¸ì…˜ì´ ë§Œë£Œë˜ì—ˆìŠµë‹ˆë‹¤. ë‹¤ì‹œ ë¡œê·¸ì¸í•´ì£¼ì„¸ìš”.'); returnToMenu(); return;
             }
             if (scannerMode === 'move' && Array.isArray(result.moved) && result.moved.length) {
               const movedSet = new Set(result.moved.map(serial => normalizeSerial(serial)));
@@ -578,7 +578,7 @@
             }
             const status = document.getElementById('submitStatus');
             status.style.display = 'block'; status.className = 'status-message error';
-            let html = `⚠️ ${result.message}<br><br>확인 필요 품목 Affected items:<br>`;
+            let html = `âš ï¸ ${result.message}<br><br>í™•ì¸ í•„ìš” í’ˆëª© Affected items:<br>`;
             const problems = result.failed || result.duplicates || [];
             problems.forEach(p => {
               html += `<div class="preview-row" style="text-align:left; background:white; margin-top:5px;"><div><strong>${p.serial || p}</strong><div style="font-size:11px">${p.type || ''} | ${p.model || ''}</div><div style="font-size:10px; color:red;">${p.message || 'Already registered'}</div></div></div>`;
@@ -589,7 +589,7 @@
           }
         } catch (e) {
           if (isAuthSessionError(e && e.message)) {
-            alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+            alert('ì„¸ì…˜ì´ ë§Œë£Œë˜ì—ˆìŠµë‹ˆë‹¤. ë‹¤ì‹œ ë¡œê·¸ì¸í•´ì£¼ì„¸ìš”.');
             returnToMenu();
           } else {
             alert('Request failed: ' + e.message);
@@ -612,10 +612,10 @@
         document.body.classList.remove('mode-add', 'mode-move');
         document.body.classList.add(scannerMode === 'move' ? 'mode-move' : 'mode-add');
         authToken = authTokenVal();
-        if (!authToken) { alert('세션이 만료되었습니다. 다시 로그인해주세요.'); returnToMenu(); return; }
-        document.getElementById('cardTitle').textContent = scannerMode === 'move' ? 'QR 이동 Move' : 'QR 등록 Add';
-        document.getElementById('cardSubtitle').textContent = scannerMode === 'move' ? '스캔로 이동합니다. Scan to move.' : '스캔로 등록합니다. Scan to add.';
-        document.getElementById('submitBtn').textContent = scannerMode === 'move' ? '이동하기 Move Items' : '등록 Add';
+        if (!authToken) { alert('ì„¸ì…˜ì´ ë§Œë£Œë˜ì—ˆìŠµë‹ˆë‹¤. ë‹¤ì‹œ ë¡œê·¸ì¸í•´ì£¼ì„¸ìš”.'); returnToMenu(); return; }
+        document.getElementById('cardTitle').textContent = scannerMode === 'move' ? 'QR ì´ë™ Move' : 'QR ë“±ë¡ Add';
+        document.getElementById('cardSubtitle').textContent = scannerMode === 'move' ? 'ìŠ¤ìº”ë¡œ ì´ë™í•©ë‹ˆë‹¤. Scan to move.' : 'ìŠ¤ìº”ë¡œ ë“±ë¡í•©ë‹ˆë‹¤. Scan to add.';
+        document.getElementById('submitBtn').textContent = scannerMode === 'move' ? 'ì´ë™í•˜ê¸° Move Items' : 'ë“±ë¡ Add';
         document.getElementById('dateInput').value = new Date(Date.now() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 10);
         document.getElementById('movementStatusGroup').classList.toggle('hidden', scannerMode !== 'move');
         document.getElementById('scannerCard').classList.remove('hidden');
@@ -625,12 +625,12 @@
         ]).then(results => {
           const tokenValid = Boolean(results[0]);
           if (!tokenValid) {
-            alert('스캐너 토큰이 만료되었습니다. 다시 시도해주세요.');
+            alert('ìŠ¤ìºë„ˆ í† í°ì´ ë§Œë£Œë˜ì—ˆìŠµë‹ˆë‹¤. ë‹¤ì‹œ ì‹œë„í•´ì£¼ì„¸ìš”.');
             returnToMenu();
           }
         }).catch(err => {
           if (isAuthSessionError(err && err.message)) {
-            alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+            alert('ì„¸ì…˜ì´ ë§Œë£Œë˜ì—ˆìŠµë‹ˆë‹¤. ë‹¤ì‹œ ë¡œê·¸ì¸í•´ì£¼ì„¸ìš”.');
           } else {
             alert('Scanner token validation failed: ' + (err && err.message ? err.message : 'Unknown error'));
           }
@@ -640,5 +640,6 @@
     </script>
   </body>
 </html>
+
 
 
