@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: "SF Pro Rounded", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+        background: linear-gradient(170deg, #f5f7fb 0%, #eef2f7 100%);
+        padding: 25px;
+        font-size: 14px;
+        color: #1e293b;
+        max-width: 600px;
+        margin: 0 auto;
+        overflow-x: hidden;
+        overflow-y: auto;
+        height: auto;
+      }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e2e8f0;
+      }
+      
+      .header h2 {
+        font-size: 24px;
+        color: #0f3b5e;
+      }
+      
+      .back-btn {
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        border: none;
+        background: #4a5568;
+        color: #fff;
+        font-size: 20px;
+        font-weight: 700;
+        cursor: pointer;
+        z-index: 1200;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
+      }
+      
+      .back-btn:hover {
+        background: #2d3748;
+      }
+      .back-btn { display: none !important; }
+      
+      .filter-section {
+        background: linear-gradient(180deg, #ffffff, #f8fafc);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 14px 24px -14px rgba(15,23,42,0.35);
+        border: 1px solid #e2e8f0;
+      }
+      
+      .filter-row {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+      }
+      
+      .filter-group {
+        flex: 1;
+        min-width: 180px;
+      }
+      
+      label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+        color: #475569;
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+      
+      input, select {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        display: block;
+        padding: 12px 14px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 14px;
+        transition: all 0.2s;
+      }
+      input, textarea { font-size: 16px; touch-action: manipulation; }
+      input:focus, textarea:focus { outline: none; }
+      
+      input:focus, select:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+      }
+      
+      .button-group {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+      }
+      
+      .primary-btn {
+        background: linear-gradient(145deg, #e57a44, #ce8a72);
+        color: white;
+        border: none;
+        padding: 14px 20px;
+        border-radius: 14px;
+        font-size: 15px;
+        font-weight: 600;
+        flex: 2;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      
+      .primary-btn:hover {
+        background: linear-gradient(145deg, #cf6835, #b97761);
+        transform: translateY(-1px);
+        box-shadow: 0 10px 18px -10px rgba(229,122,68,0.55);
+      }
+      
+      .secondary-btn {
+        background: white;
+        color: #2563eb;
+        border: 2px solid #e2e8f0;
+        padding: 14px 20px;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        flex: 1;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      
+      .secondary-btn:hover {
+        background: #f5f7fb;
+        border-color: #ce8a72;
+      }
+      
+      .results-count {
+        background: #f1f5f9;
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin: 16px 0;
+        font-weight: 600;
+        color: #0f3b5e;
+      }
+      
+      .items-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+        max-height: 360px;
+        overflow-y: auto;
+        padding-right: 8px;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      .item-card {
+        background: linear-gradient(180deg, #ffffff, #f9fbff);
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 16px;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+      }
+      
+      .item-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        border-color: #2563eb;
+      }
+      
+      .item-card.selected {
+        border: 2px solid #2563eb;
+        background: #f0f9ff;
+      }
+      
+      .item-serial {
+        font-weight: 600;
+        color: #0f172a;
+        margin-bottom: 10px;
+        font-size: 16px;
+        padding-right: 36px;
+        line-height: 1.35;
+        word-break: keep-all;
+        overflow-wrap: anywhere;
+      }
+      
+      .item-badge {
+        position: absolute;
+        bottom: 12px;
+        right: 16px;
+      }
+      
+      .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      
+      .status-In { background: #dcfce7; color: #166534; }
+      .status-Out { background: #fee2e2; color: #991b1b; }
+      .status-Problem { background: #fef9c3; color: #854d0e; }
+      .status-unknown { background: #e2e8f0; color: #0f172a; }
+      
+      .item-details {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        font-size: 12px;
+        color: #64748b;
+        margin-top: 8px;
+        padding-right: 90px;
+        padding-bottom: 4px;
+      }
+      
+      .item-detail {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .action-icons {
+        display: inline-flex;
+        gap: 6px;
+      }
+
+      .action-icons button {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        line-height: 1;
+        padding: 4px;
+        color: #1e293b;
+        transition: transform 0.2s;
+      }
+
+      .action-icons button:hover {
+        transform: scale(1.2);
+      }
+
+      .item-actions-top {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 2;
+      }
+      
+      .current-status-card {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: white;
+        border-radius: 12px;
+        padding: 15px 20px;
+        margin-bottom: 25px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 25px;
+        align-items: center;
+        box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+      }
+      
+      .status-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      
+      .status-label {
+        font-size: 12px;
+        opacity: 0.8;
+        font-weight: 500;
+      }
+      
+      .status-value {
+        font-size: 15px;
+        font-weight: 600;
+      }
+      
+      .status-value .badge-white {
+        background: white;
+        color: #2563eb;
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 13px;
+      }
+      
+      .history-section {
+        margin-top: 20px;
+      }
+      
+      .history-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #0f3b5e;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      
+      .history-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        max-height: none;
+        overflow-y: visible;
+        padding-right: 0;
+      }
+
+      .history-grid.is-scrollable {
+        max-height: 320px;
+        overflow-y: auto;
+        padding-right: 8px;
+      }
+
+      @media (max-width: 768px) {
+        body { padding: 14px; max-width: 100%; height: auto; overflow-y: auto; }
+        input, select { font-size: 16px; }
+        .filter-section { padding: 14px; }
+        .filter-row { flex-direction: column; gap: 10px; }
+        .filter-group { min-width: 0; }
+        .button-group { flex-direction: column; }
+        .items-grid, .history-grid { grid-template-columns: 1fr; }
+      }
+      
+      .history-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 14px;
+        transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+      }
+      
+      .history-card:hover { border-color: #2563eb; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
+      .history-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+      .history-date { font-size: 13px; color: #2563eb; font-weight: 500; }
+      .history-details { display: flex; gap: 15px; font-size: 12px; color: #64748b; }
+      .history-location, .history-person { display: flex; align-items: center; gap: 4px; }
+      .no-history, .loading, .no-data { text-align: center; padding: 40px; color: #64748b; }
+      .no-history { font-style: italic; background: white; border-radius: 12px; border: 2px dashed #e2e8f0; grid-column: 1 / -1; }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h2>🔍 재고 검색 Search Inventory</h2>
+      <button class="back-btn" type="button" onclick="goToMenu()" aria-label="Main Menu">&#8592;</button>
+    </div>
+    
+    <div class="filter-section">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>품목 종류 Item Type</label>
+          <select id="typeFilter" onchange="updateModelFilter()">
+            <option value="All">모든 종류 All Types</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label>모델 Item Model</label>
+          <select id="modelFilter">
+            <option value="All">모든 모델 All Models</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>상태 Status</label>
+          <select id="statusFilter">
+            <option value="All">모두 상태 All Status</option>
+            <option value="In">입고 In</option>
+            <option value="Out">출고 Out</option>
+            <option value="Problem">불량 Problem</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label>위치 Location</label>
+          <input type="text" id="locationFilter" placeholder="e.g., 서울 사무실, 기타">
+        </div>
+      </div>
+      
+      <div class="filter-row">
+        <div class="filter-group">
+          <label>담당자 Added By</label>
+          <select id="personFilter">
+            <option value="All">모든 담당자 All People</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label>시리얼 번호 Serial Number</label>
+          <input type="text" id="searchText" placeholder="Serial number...">
+        </div>
+      </div>
+      
+      <div class="button-group">
+        <button class="primary-btn" onclick="search()" id="searchBtn">검색 Search</button>
+        <button class="secondary-btn" onclick="clearFilters()">초기화 Clear</button>
+      </div>
+    </div>
+    
+    <div id="resultsCount" class="results-count" style="display: none;"></div>
+    
+    <div id="itemsContainer" class="items-grid">
+      <div class="no-data">검색 조건을 입력한 뒤 Search를 누르세요 Enter search criteria and click Search</div>
+    </div>
+    
+    <div id="historySection" style="display: none;">
+      <div class="current-status-card">
+        <div class="status-item">
+          <span class="status-label">상태 Status:</span>
+          <span class="status-value"><span class="badge-white" id="currentStatus">-</span></span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">위치 Location:</span>
+          <span class="status-value" id="currentLocation">-</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">최근 Last:</span>
+          <span class="status-value" id="lastUpdated">-</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">담당 By:</span>
+          <span class="status-value" id="lastActionBy">-</span>
+        </div>
+      </div>
+      
+      <div class="history-section">
+        <div class="history-title">📜 이동 내역 Movement History</div>
+        <div id="historyGrid" class="history-grid">
+          <div class="no-history">아이템 선택하세요 Select an item to view its history</div>
+        </div>
+      </div>
+    </div>
+    
+    <script>
+      const BACKEND_API_BASE = 'https://inventory-proxy.conceptideas0.workers.dev/api';
+      const FETCH_TIMEOUT_MS = 10000;
+      var allItems = [];
+      var types = [];
+      var people = [];
+      var selectedItem = null;
+      var historyCache = new Map();
+      var historyRequestCache = new Map();
+
+      function parseJsonResponse(response) {
+        return response.text().then(function(raw) {
+          var data = null;
+          try { data = raw ? JSON.parse(raw) : null; } catch (e) { throw new Error(String(raw || '').trim() || 'Invalid JSON response'); }
+          if (!response.ok) throw new Error((data && (data.message || data.error)) || `HTTP ${response.status}`);
+          return data;
+        });
+      }
+
+      function getAuthToken() { return localStorage.getItem('inventoryLoginToken') || ''; }
+      function formatDateDisplaySafe(dateString) {
+        if (!dateString) return 'Unknown';
+        try {
+          const raw = String(dateString).trim();
+          let d = null;
+          const numericRaw = raw.replace(/,/g, '');
+          const numericLike = /^[-+]?\d+(\.\d+)?([eE][-+]?\d+)?$/.test(numericRaw);
+          if (numericLike) {
+            const n = Number(numericRaw);
+            if (n >= 1e12) {
+              d = new Date(n); // unix ms
+            } else if (n >= 1e9) {
+              d = new Date(n * 1000); // unix seconds
+            } else if (n > 20000 && n < 100000) {
+              d = new Date((n - 25569) * 86400 * 1000); // Google Sheets serial date
+            }
+          } else {
+            d = new Date(raw);
+          }
+          if (d && !isNaN(d.getTime()) && d.getUTCFullYear() <= 1971 && numericLike) {
+            const n = Number(numericRaw);
+            if (n > 20000 && n < 100000) {
+              d = new Date((n - 25569) * 86400 * 1000);
+            } else if (n > 1e9 && n < 1e12) {
+              d = new Date(n * 1000);
+            }
+          }
+          if (!d || isNaN(d.getTime())) return raw.split(' ')[0];
+          return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+        } catch (e) {
+          return String(dateString);
+        }
+      }
+      function fetchWithTimeout(url, options) {
+        var controller = new AbortController();
+        var timer = setTimeout(function() { controller.abort(); }, FETCH_TIMEOUT_MS);
+        return fetch(url, Object.assign({}, options || {}, { signal: controller.signal }))
+          .finally(function() { clearTimeout(timer); })
+          .catch(function(err) {
+            if (err && err.name === 'AbortError') throw new Error('Request timed out');
+            throw err;
+          });
+      }
+
+      function callApiGet(action, params) {
+        var url = new URL(BACKEND_API_BASE);
+        url.searchParams.set('api', action);
+        var token = getAuthToken();
+        if (token) { url.searchParams.set('authToken', token); url.searchParams.set('token', token); }
+        Object.keys(params || {}).forEach(k => { if (params[k] != null) url.searchParams.set(k, String(params[k])); });
+        return fetchWithTimeout(url.toString(), { mode: 'cors' }).then(parseJsonResponse);
+      }
+
+      function callApiPost(action, payload) {
+        var url = new URL(BACKEND_API_BASE);
+        url.searchParams.set('api', action);
+        var body = Object.assign({}, payload || {});
+        var token = getAuthToken();
+        if (token) { body.authToken = token; url.searchParams.set('authToken', token); url.searchParams.set('token', token); }
+        return fetchWithTimeout(url.toString(), {
+          method: 'POST',
+          mode: 'cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        }).then(parseJsonResponse);
+      }
+
+      function expectArray(v, label) {
+        if (Array.isArray(v)) return v;
+        if (v && v.success === false) throw new Error(v.message);
+        return [];
+      }
+
+      function handleAuthExpiryIfNeeded(error) {
+        var msg = String((error && error.message) || '').toLowerCase();
+        if (msg.indexOf('invalid or expired auth token') > -1 || msg.indexOf('authtoke') > -1) {
+          localStorage.removeItem('inventoryLoginToken');
+          localStorage.removeItem('inventoryLoggedInUser');
+          goToMenu();
+          return true;
+        }
+        return false;
+      }
+
+      function goToMenu() {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'inventory-nav-menu' }, '*');
+        }
+      }
+      
+      
+      function loadInitialData() {
+        callApiGet('getAllItems').then(items => { 
+          allItems = expectArray(items, 'Items'); 
+          updateModelFilter(); 
+        }).catch(err => { if (!handleAuthExpiryIfNeeded(err)) console.error('Items error:', err); });
+        
+        callApiGet('getItemTypes').then(res => { 
+          types = expectArray(res, 'Types'); 
+          updateTypeFilter(); 
+        }).catch(err => { if (!handleAuthExpiryIfNeeded(err)) console.error('Type error:', err); });
+        
+        callApiGet('getPeople').then(res => { 
+          people = expectArray(res, 'People'); 
+          updatePersonFilter(); 
+        }).catch(err => { if (!handleAuthExpiryIfNeeded(err)) console.error('People error:', err); });
+      }
+      
+      function updateTypeFilter() {
+        const select = document.getElementById('typeFilter');
+        select.innerHTML = '<option value="All">모든 종류 All Types</option>';
+        types.forEach(t => { select.innerHTML += `<option value="${t}">${t}</option>`; });
+      }
+      
+      function updateModelFilter() {
+        const selectedType = document.getElementById('typeFilter').value;
+        const modelSelect = document.getElementById('modelFilter');
+        
+        if (!selectedType || selectedType === 'All') {
+          modelSelect.innerHTML = '<option value="All">모든 모델 All Models</option>';
+          if (allItems.length > 0) {
+            const ms = [...new Set(allItems.map(i => i.model).filter(Boolean))].sort();
+            ms.forEach(m => { modelSelect.innerHTML += `<option value="${m}">${m}</option>`; });
+          }
+          return;
+        }
+
+        callApiGet('getModelsByType', { type: selectedType })
+          .then(ms => {
+            ms = expectArray(ms, 'Models');
+            modelSelect.innerHTML = '<option value="All">모든 모델 All Models</option>';
+            ms.forEach(m => { modelSelect.innerHTML += `<option value="${m}">${m}</option>`; });
+          })
+          .catch(err => { 
+            if (handleAuthExpiryIfNeeded(err)) return;
+            console.error('Model error:', err); 
+            modelSelect.innerHTML = '<option value="All">모든 모델 All Models</option>';
+          });
+      }
+      
+      function updatePersonFilter() {
+        const select = document.getElementById('personFilter');
+        select.innerHTML = '<option value="All">모든 담당자 All People</option>';
+        people.forEach(p => { select.innerHTML += `<option value="${p}">${p}</option>`; });
+      }
+      
+      function search() {
+        const btn = document.getElementById('searchBtn');
+        btn.disabled = true;
+        btn.textContent = '검색중... Searching...';
+        document.getElementById('itemsContainer').innerHTML = '<div class="loading">검색중... Searching...</div>';
+        document.getElementById('resultsCount').style.display = 'none';
+        document.getElementById('historySection').style.display = 'none';
+        selectedItem = null;
+        
+        const criteria = {
+          type: document.getElementById('typeFilter').value,
+          model: document.getElementById('modelFilter').value,
+          status: document.getElementById('statusFilter').value,
+          location: document.getElementById('locationFilter').value,
+          person: document.getElementById('personFilter').value,
+          searchText: document.getElementById('searchText').value
+        };
+        
+        callApiPost('searchInventory', { criteria: criteria })
+          .then(items => {
+            btn.disabled = false;
+            btn.textContent = '검색 Search';
+            displayItems(expectArray(items, 'Search results'));
+          })
+          .catch(err => {
+            if (handleAuthExpiryIfNeeded(err)) return;
+            btn.disabled = false;
+            btn.textContent = '검색 Search';
+            document.getElementById('itemsContainer').innerHTML = `<div class="error-message">Error: ${err.message}</div>`;
+          });
+      }
+      
+      function displayItems(items) {
+        const container = document.getElementById('itemsContainer');
+        const countDiv = document.getElementById('resultsCount');
+        if (!items || items.length === 0) {
+          container.innerHTML = '<div class="no-data">검색 결과가 없습니다 No items found</div>';
+          countDiv.style.display = 'none';
+          return;
+        }
+        countDiv.style.display = 'block';
+        countDiv.textContent = `Found ${items.length} item(s)`;
+        
+        let html = '';
+        items.forEach(item => {
+          const isSelected = selectedItem && selectedItem.fullSerial === item.fullSerial;
+          const dateAddedText = item.dateAdded ? formatDateDisplaySafe(item.dateAdded) : '';
+          const lastUpdatedText = item.lastUpdated ? formatDateDisplaySafe(item.lastUpdated) : '';
+          const isEpochLike = (v) => /^19(69|70|71)-/.test(String(v || ''));
+          let dateAdded = 'Unknown';
+          if (dateAddedText && dateAddedText !== 'Unknown' && !isEpochLike(dateAddedText)) {
+            dateAdded = dateAddedText;
+          } else if (lastUpdatedText && lastUpdatedText !== 'Unknown' && !isEpochLike(lastUpdatedText)) {
+            dateAdded = lastUpdatedText;
+          } else if (dateAddedText && dateAddedText !== 'Unknown') {
+            dateAdded = dateAddedText;
+          }
+          const serialSafe = item.fullSerial.replace(/'/g, "\\'");
+          
+          html += `
+            <div class="item-card ${isSelected ? 'selected' : ''}" onclick="selectItem(event, '${serialSafe}')">
+              <div class="item-actions-top">
+                <span class="action-icons">
+                  <button type="button" aria-label="Delete item" onclick="deleteItem('${serialSafe}', event)">🗑️</button>
+                </span>
+              </div>
+              <div class="item-badge">
+                <span class="status-badge status-${item.statusKey || 'unknown'}">${item.status || 'Unknown'}</span>
+              </div>
+              <div class="item-serial">
+                <span>${item.fullSerial}</span>
+              </div>
+              <div class="item-details">
+                <span class="item-detail">📦 ${item.type || 'N/A'} - ${item.model || 'N/A'}</span>
+                <span class="item-detail">📍 ${item.location || 'Unknown'}</span>
+                <span class="item-detail">📅 ${dateAdded}</span>
+                <span class="item-detail">👤 ${item.addedBy || 'Unknown'}</span>
+              </div>
+            </div>
+          `;
+        });
+        container.innerHTML = html;
+      }
+      
+      function deleteItem(fullSerial, evt) {
+        if (evt && evt.stopPropagation) evt.stopPropagation();
+        if (!confirm(`${fullSerial} 삭제하시겠습니까?\nAre you sure you want to delete this item?`)) return;
+        callApiGet('deleteItem', { fullSerial: fullSerial })
+          .then(res => {
+            if (res.success) {
+              alert(res.message);
+              callApiGet('getAllItems').then(items => { allItems = expectArray(items); search(); });
+            } else alert(res.message);
+          })
+          .catch(err => alert('Failed to delete item: ' + err.message));
+      }
+
+      function selectItem(evt, fullSerial) {
+        const item = allItems.find(i => i.fullSerial === fullSerial);
+        if (!item) return;
+        selectedItem = item;
+        document.querySelectorAll('.item-card').forEach(c => c.classList.remove('selected'));
+        if (evt && evt.currentTarget) evt.currentTarget.classList.add('selected');
+        document.getElementById('historySection').style.display = 'block';
+        document.getElementById('currentStatus').innerHTML = `<span class="badge-white">${item.status || 'Unknown'}</span>`;
+        document.getElementById('currentLocation').textContent = item.location || 'Unknown';
+        const grid = document.getElementById('historyGrid');
+        grid.innerHTML = '<div class="loading">Loading history...</div>';
+
+        const renderHistory = (movements) => {
+          if (movements && movements.length > 0) {
+            const sorted = [...movements].sort((a, b) => new Date(b.date) - new Date(a.date));
+            document.getElementById('lastUpdated').textContent = formatDateDisplaySafe(sorted[0].date);
+            document.getElementById('lastActionBy').textContent = sorted[0].changedBy || 'Unknown';
+            let html = '';
+            sorted.forEach(m => {
+              html += `
+                <div class="history-card">
+                  <div class="history-row">
+                    <span class="history-date">${formatDateDisplaySafe(m.date)}</span>
+                    <span class="history-action"><span class="status-badge status-${m.actionKey || 'unknown'}">${m.action || 'Unknown'}</span></span>
+                  </div>
+                  <div class="history-details">
+                    <span class="history-location">📍 ${m.location || ''}</span>
+                    <span class="history-person">👤 ${m.changedBy || 'Unknown'}</span>
+                  </div>
+                </div>`;
+            });
+            grid.innerHTML = html;
+            grid.classList.toggle('is-scrollable', sorted.length > 3);
+          } else {
+            grid.innerHTML = '<div class="no-history">No history found</div>';
+          }
+        };
+
+        const cacheKey = String(fullSerial || '');
+        if (historyCache.has(cacheKey)) {
+          renderHistory(historyCache.get(cacheKey));
+          return;
+        }
+
+        let requestPromise = historyRequestCache.get(cacheKey);
+        if (!requestPromise) {
+          requestPromise = callApiGet('getItemHistory', { fullSerial: fullSerial })
+            .then(movements => {
+              historyCache.set(cacheKey, movements || []);
+              historyRequestCache.delete(cacheKey);
+              return movements || [];
+            })
+            .catch(error => {
+              historyRequestCache.delete(cacheKey);
+              throw error;
+            });
+          historyRequestCache.set(cacheKey, requestPromise);
+        }
+
+        requestPromise
+          .then(renderHistory)
+          .catch(() => grid.innerHTML = '<div class="no-history">Error loading history</div>');
+      }
+      
+      function clearFilters() {
+        ['typeFilter', 'modelFilter', 'statusFilter', 'personFilter'].forEach(id => document.getElementById(id).value = 'All');
+        document.getElementById('locationFilter').value = '';
+        document.getElementById('searchText').value = '';
+        document.getElementById('historySection').style.display = 'none';
+        search();
+      }
+
+      window.onload = function() {
+        if (!getAuthToken()) { goToMenu(); return; }
+        loadInitialData();
+        const s = document.getElementById('searchText');
+        if (s) s.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); search(); } });
+      };
+    </script>
+  </body>
+</html>
+

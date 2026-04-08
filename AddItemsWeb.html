@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        font-family: "SF Pro Rounded", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+        background: linear-gradient(170deg, #f5f7fb 0%, #eef2f7 100%); padding: 25px; font-size: 14px; color: #1e293b; max-width: 600px; margin: 0 auto; overflow-y: auto;
+      }
+      .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #d7e3f4; }
+      .header h2 { font-size: 22px; color: #0f3b5e; }
+      .back-btn {
+        position: fixed; top: 12px; left: 12px; width: 42px; height: 42px; border-radius: 50%;
+        border: none; background: #4a5568; color: #fff; font-size: 20px; font-weight: 700;
+        cursor: pointer; z-index: 1200; display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
+      }
+      .back-btn:hover { background: #2d3748; }
+      .back-btn { display: none !important; }
+      .form-card { background: linear-gradient(180deg, #ffffff, #f8fafc); border-radius: 20px; padding: 25px; margin-bottom: 20px; box-shadow: 0 14px 24px -14px rgba(15,23,42,0.35); border: 1px solid #e2e8f0; }
+      .form-group { margin-bottom: 20px; }
+      label { display: block; margin-bottom: 6px; font-weight: 600; color: #475569; font-size: 12px; text-transform: uppercase; }
+      input, select, textarea { width: 100%; max-width: 100%; min-width: 0; display: block; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 11px; font-size: 14px; transition: all 0.2s; }
+      input, textarea { font-size: 16px; touch-action: manipulation; }
+      input:focus, textarea:focus { outline: none; }
+      input[type="date"] { -webkit-appearance: none; appearance: none; }
+      .location-options { display: flex; gap: 10px; padding: 10px; background: #f8fafc; border-radius: 8px; flex-direction: column; }
+      .location-options label { display: grid; grid-template-columns: 18px 1fr; align-items: center; column-gap: 8px; text-transform: none; font-weight: 500; margin-bottom: 0; cursor: pointer; }
+      .location-options input[type="radio"] { width: 18px !important; height: 18px; margin: 0; }
+      .primary-btn { background: linear-gradient(145deg, #0e9fbe, #2dc4c3); color: white; border: none; padding: 14px; border-radius: 14px; font-size: 16px; font-weight: 600; width: 100%; cursor: pointer; transition: all 0.2s; box-shadow: 0 10px 18px -10px rgba(14,159,190,0.55); }
+      .primary-btn:hover { background: linear-gradient(145deg, #0c89a3, #27a7a6); transform: translateY(-1px); box-shadow: 0 12px 20px -10px rgba(14,159,190,0.6); }
+      #status { margin-top: 15px; padding: 12px; border-radius: 8px; display: none; font-weight: 500; text-align: center; }
+      .success { background: #dcfce7; color: #166534; }
+      .error { background: #fee2e2; color: #991b1b; }
+      .preview-box { background: #f1f5f9; border: 2px dashed #94a3b8; border-radius: 10px; padding: 15px; margin: 15px 0; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h2>➕ 등록 Add</h2>
+      <button class="back-btn" type="button" onclick="goToMenu()">←</button>
+    </div>
+    <div class="form-card">      <div class="form-group"><label>제조번호 Manufacturing Number *</label><input type="text" id="manufNumber" placeholder="e.g., MAAAAAA"></div>      <div class="form-group"><label>시리얼 코드 Serial Code *</label><input type="text" id="serialCode" placeholder="e.g., SAAAAAA"></div>
+      <div class="form-group"><label>번호 Number *</label><input type="text" id="numbersInput" placeholder="e.g., 1, 1-5, 1,3,5"></div>
+      <div id="previewArea" class="preview-box" style="display: none;"></div>
+      <div class="form-group"><label>입고 일자 Date Added *</label><input type="date" id="dateAdded"></div>
+      <div class="form-group">
+        <label>위치 Location *</label>
+        <div class="location-options">
+          <label><input type="radio" name="location" value="Office" checked onchange="toggleLocation()"><span>서울 사무실 Seoul Office</span></label>
+          <label><input type="radio" name="location" value="Other" onchange="toggleLocation()"><span>기타 Other</span></label>
+        </div>
+      </div>
+      <div id="customLocationGroup" class="form-group" style="display: none;">
+        <label>자세한 위치 Specify Location *</label>
+        <input type="text" id="customLocation" placeholder="e.g., 데모용 창고">
+      </div>
+      <div class="form-group"><label>품목 종류 Item Type *</label><select id="itemType" onchange="loadModels()"><option value="">Loading...</option></select></div>
+      <div class="form-group"><label>모델명 Item Model *</label><select id="itemModel"><option value="">Select type first</option></select></div>
+      <div class="form-group"><label>메모 Notes</label><textarea id="notes" rows="2" placeholder="Optional"></textarea></div>
+      <button class="primary-btn" onclick="addItems()" id="submitBtn">등록 Add</button>
+    </div>
+    <div id="status"></div>
+    <script>
+      const BACKEND_API_BASE = 'https://inventory-proxy.conceptideas0.workers.dev/api';
+      const FETCH_TIMEOUT_MS = 10000;
+      var currentNumbers = [];
+      function authToken() { return localStorage.getItem('inventoryLoginToken') || ''; }
+      function parseJsonResponse(response) {
+        return response.text().then(function(raw) {
+          var data = null;
+          try {
+            data = raw ? JSON.parse(raw) : null;
+          } catch (e) {
+            throw new Error(String(raw || '').trim() || 'Invalid JSON response');
+          }
+          if (!response.ok) {
+            var message = data && (data.message || data.error);
+            throw new Error(message || ('HTTP ' + response.status));
+          }
+          return data;
+        });
+      }
+      function fetchWithTimeout(url, options) {
+        var controller = new AbortController();
+        var timer = setTimeout(function() { controller.abort(); }, FETCH_TIMEOUT_MS);
+        return fetch(url, Object.assign({}, options || {}, { signal: controller.signal }))
+          .finally(function() { clearTimeout(timer); })
+          .catch(function(err) {
+            if (err && err.name === 'AbortError') throw new Error('Request timed out');
+            throw err;
+          });
+      }
+      function isAuthExpiredMessage(msg) {
+        return String(msg || '').toLowerCase().indexOf('invalid or expired auth token') > -1;
+      }
+      function isAuthRequiredMessage(msg) {
+        return String(msg || '').toLowerCase().indexOf('authtoke') > -1;
+      }
+      function handleAuthExpiryFromError(err) {
+        var msg = err && err.message;
+        if (!isAuthExpiredMessage(msg) && !isAuthRequiredMessage(msg)) return false;
+        try {
+          localStorage.removeItem('inventoryLoginToken');
+          localStorage.removeItem('inventoryLoggedInUser');
+        } catch (e) {}
+        alert('세션이 만료되었습니다. Session expired. 다시 로그인해주세요. Please log in again.');
+        goToMenu();
+        return true;
+      }
+      function callApiGet(a, p) {
+        var url = new URL(BACKEND_API_BASE); url.searchParams.set('api', a);
+        var t = authToken(); if (t) { url.searchParams.set('authToken', t); url.searchParams.set('token', t); }
+        Object.keys(p || {}).forEach(k => { if (p[k] != null) url.searchParams.set(k, String(p[k])); });
+        return fetchWithTimeout(url.toString(), { mode: 'cors' }).then(parseJsonResponse);
+      }
+      function callApiPost(a, payload) {
+        var url = new URL(BACKEND_API_BASE);
+        url.searchParams.set('api', a);
+        var b = Object.assign({}, payload || {});
+        var t = authToken();
+        if (t) { b.authToken = t; url.searchParams.set('authToken', t); url.searchParams.set('token', t); }
+        return fetchWithTimeout(url.toString(), { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) }).then(parseJsonResponse);
+      }
+      function toggleLocation() {
+        var s = document.querySelector('input[name="location"]:checked');
+        document.getElementById('customLocationGroup').style.display = (s && s.value === 'Other') ? 'block' : 'none';
+      }
+      function goToMenu() {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'inventory-nav-menu' }, '*');
+        }
+      }
+      function localDateInputValue(date) {
+        var d = date || new Date();
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + day;
+      }
+      function setDefaultDate() { document.getElementById('dateAdded').value = localDateInputValue(new Date()); }
+      function loadDropdowns() {
+        callApiGet('getItemTypes').then(res => {
+          if (res && res.message && (isAuthExpiredMessage(res.message) || isAuthRequiredMessage(res.message))) {
+            goToMenu(); return;
+          }
+          var s = document.getElementById('itemType'); s.innerHTML = '<option value="">Select type...</option>';
+          (res || []).forEach(n => s.innerHTML += `<option value="${n}">${n}</option>`);
+        }).catch(err => { if (!handleAuthExpiryFromError(err)) { console.error('Token validation error', err); } });
+      }
+      function loadModels() {
+        var type = document.getElementById('itemType').value; if (!type) return;
+        callApiGet('getModelsByType', { type: type }).then(res => {
+          var s = document.getElementById('itemModel'); s.innerHTML = '<option value="">Select model...</option>';
+          (res || []).forEach(n => s.innerHTML += `<option value="${n}">${n}</option>`);
+        }).catch(err => {
+          if (!handleAuthExpiryFromError(err)) {
+            alert('Failed to load models: ' + err.message);
+          }
+        });
+      }
+      function parseNumbers(input) {
+        if (!input.trim()) return [];
+        var numbers = new Set();
+        input.split(',').forEach(p => {
+          p = p.trim();
+          if (p.includes('-')) {
+            var r = p.split('-').map(Number);
+            for (var i = r[0]; i <= r[1]; i++) if (!isNaN(i)) numbers.add(i);
+          } else {
+            var n = Number(p); if (!isNaN(n)) numbers.add(n);
+          }
+        });
+        return Array.from(numbers).sort((a,b) => a-b);
+      }
+      function previewNumbers() {
+        var m = document.getElementById('manufNumber').value.toUpperCase().trim();
+        var s = document.getElementById('serialCode').value.toUpperCase().trim();
+        var i = document.getElementById('numbersInput').value;
+        var p = document.getElementById('previewArea');
+        if (!i.trim() || !m || !s) { p.style.display = 'none'; return; }
+        currentNumbers = parseNumbers(i);
+        p.innerHTML = currentNumbers.map(n => `<div>${m} ${s} ${n}</div>`).join('');
+        p.style.display = 'block';
+      }
+      function addItems() {
+        var locType = document.querySelector('input[name="location"]:checked').value;
+        var customLoc = document.getElementById('customLocation').value.trim();
+        if (locType === 'Other' && !customLoc) return alert('Please enter location.');
+        var formData = {
+          manufNumber: document.getElementById('manufNumber').value.toUpperCase().trim(),
+          serialCode: document.getElementById('serialCode').value.toUpperCase().trim(),
+          numbers: currentNumbers, dateAdded: document.getElementById('dateAdded').value,
+          personName: localStorage.getItem('inventoryLoggedInUser'),
+          locationType: locType, customLocation: customLoc,
+          itemType: document.getElementById('itemType').value, itemModel: document.getElementById('itemModel').value,
+          notes: document.getElementById('notes').value.trim()
+        };
+        var btn = document.getElementById('submitBtn'); btn.disabled = true;
+        callApiPost('addItems', { formData: formData }).then(res => {
+          var s = document.getElementById('status'); s.className = res.success ? 'success' : 'error';
+          s.textContent = res.message; s.style.display = 'block';
+          if (res.success) {
+            ['manufNumber', 'serialCode', 'numbersInput', 'notes', 'customLocation', 'itemType'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('itemModel').innerHTML = '<option value="">Select type first</option>';
+            document.getElementById('previewArea').style.display = 'none'; setDefaultDate();
+          }
+          btn.disabled = false;
+        }).catch(err => { if (!handleAuthExpiryFromError(err)) { alert('Error: ' + err.message); } btn.disabled = false; });
+      }
+      window.onload = function() {
+        if (!authToken()) { goToMenu(); return; }
+        setDefaultDate(); loadDropdowns(); toggleLocation();
+        ['manufNumber', 'serialCode', 'numbersInput'].forEach(id => document.getElementById(id).addEventListener('input', previewNumbers));
+      };
+    </script>
+  </body>
+</html>
+
+
+

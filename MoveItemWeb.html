@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        font-family: "SF Pro Rounded", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+        background: linear-gradient(170deg, #f5f7fb 0%, #eef2f7 100%); padding: 25px; font-size: 14px; color: #1e293b; max-width: 600px; margin: 0 auto; overflow-y: auto;
+      }
+      .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #d7e3f4; }
+      .header h2 { font-size: 22px; color: #0f3b5e; }
+      .back-btn {
+        position: fixed; top: 12px; left: 12px; width: 42px; height: 42px; border-radius: 50%;
+        border: none; background: #4a5568; color: #fff; font-size: 20px; font-weight: 700;
+        cursor: pointer; z-index: 1200; display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
+      }
+      .back-btn:hover { background: #2d3748; }
+      .back-btn { display: none !important; }
+      .tab-buttons { display: flex; gap: 8px; margin-bottom: 20px; background: linear-gradient(180deg, #ffffff, #f7f9fc); padding: 6px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 8px 16px -12px rgba(15,23,42,0.35); }
+      .tab-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; background: transparent; color: #64748b; transition: all 0.2s; }
+      .tab-btn:hover { background: #f1f5f9; color: #2563eb; }
+      .tab-btn.active { background: linear-gradient(145deg, #5f9be7, #7faee6); color: white; }
+      .tab-content { display: none; }
+      .tab-content.active { display: block; }
+      .form-card { background: linear-gradient(180deg, #ffffff, #f8fafc); border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 14px 24px -14px rgba(15,23,42,0.35); border: 1px solid #e2e8f0; }
+      .form-group { margin-bottom: 16px; }
+      label { display: block; margin-bottom: 6px; font-weight: 600; color: #475569; font-size: 12px; text-transform: uppercase; }
+      input, select, textarea { width: 100%; max-width: 100%; min-width: 0; display: block; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; transition: all 0.2s; }
+      input, textarea { font-size: 16px; touch-action: manipulation; }
+      input:focus, textarea:focus { outline: none; }
+      input[type="date"] { -webkit-appearance: none; appearance: none; }
+      .primary-btn { background: linear-gradient(145deg, #5d8dd6, #7ea6de); color: white; border: none; padding: 14px; border-radius: 14px; font-size: 15px; font-weight: 600; width: 100%; cursor: pointer; transition: all 0.2s; margin-bottom: 10px; box-shadow: 0 10px 18px -10px rgba(93,141,214,0.55); }
+      .primary-btn:hover { background: linear-gradient(145deg, #4c79bc, #6d94cc); transform: translateY(-1px); box-shadow: 0 12px 20px -10px rgba(93,141,214,0.6); }
+      .results-list { margin-top: 20px; max-height: 360px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 12px; background: white; }
+      .result-item { padding: 15px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 15px; cursor: pointer; }
+      .result-item.selected { background: #e0f2fe; border-left: 4px solid #2563eb; }
+      .movement-options { display: flex; gap: 8px; margin: 16px 0; }
+      .movement-btn { flex: 1; padding: 12px; border: 2px solid transparent; border-radius: 8px; text-align: center; cursor: pointer; font-weight: 600; font-size: 13px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; gap: 4px; }
+      .movement-btn.In { background: #dcfce7; color: #166534; }
+      .movement-btn.Out { background: #fee2e2; color: #991b1b; }
+      .movement-btn.Problem { background: #fef9c3; color: #854d0e; }
+      .movement-btn.selected { border-color: #2563eb; transform: scale(1.02); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+      .use-current-date { display: flex; align-items: center; gap: 8px; margin: 10px 0; padding: 10px; background: #f8fafc; border-radius: 8px; }
+      .use-current-date label { display: inline; text-transform: none; font-weight: 500; margin: 0; }
+      .use-current-date input[type="checkbox"] { width: auto; margin: 0; }
+      .location-options { display: flex; gap: 10px; padding: 10px; background: #f8fafc; border-radius: 8px; flex-direction: column; margin-top: 8px; }
+      .location-options label { display: grid; grid-template-columns: 18px 1fr; align-items: center; column-gap: 8px; text-transform: none; font-weight: 500; margin-bottom: 0; cursor: pointer; }
+      .location-options input[type="radio"] { width: 18px !important; height: 18px; margin: 0; }
+      #status { margin-top: 16px; padding: 12px; border-radius: 8px; display: none; font-weight: 500; text-align: center; }
+      .success { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+      .error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+      .preview-row { padding:10px 8px; border-bottom:1px solid rgba(148,163,184,0.25); display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:14px; }
+      .status-actions { margin-top: 12px; display: flex; justify-content: center; }
+      .ok-btn { border: none; border-radius: 8px; background: #2563eb; color: white; padding: 8px 16px; font-weight: 600; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h2>이동 Move Items</h2>
+      <button class="back-btn" type="button" onclick="goToMenu()">←</button>
+    </div>
+    <div id="searchTab" class="tab-content active">
+      <div class="form-card">
+        <div class="form-group"><label>시리얼 번호 검색 Search</label><input type="text" id="searchInput" placeholder="Enter serial number..."></div>
+        <button class="primary-btn" onclick="searchItems()">검색 Search Items</button>
+        <div id="searchResults" class="results-list" style="display: none;"></div>
+      </div>
+    </div>
+    <div id="moveForm" style="display: none;">
+      <div class="form-card">
+        <h3>선택 항목 이동 Move Selected</h3>
+        <div class="movement-options">
+          <div class="movement-btn In" id="btnIn" onclick="selectMovement('In')">📥입고 In</div>
+          <div class="movement-btn Out" id="btnOut" onclick="selectMovement('Out')">📤출고 Out</div>
+          <div class="movement-btn Problem" id="btnProb" onclick="selectMovement('Problem')">⚠️불량 Problem</div>
+        </div>
+        <div class="form-group">
+          <label>이동 일자 Date</label>
+          <input type="date" id="movementDate">
+          <div class="use-current-date">
+            <input type="checkbox" id="useCurrentDate" checked onchange="toggleDate()">
+            <label for="useCurrentDate">오늘 날짜 사용 Use current date</label>
+          </div>
+        </div>
+        <div id="locationField">
+          <label>위치 Location *</label>
+          <div class="location-options" id="locContainer"></div>
+          <div id="customLocationGroup" class="form-group" style="display: none; margin-top:15px;">
+            <label>자세한 위치 Specify Location *</label>
+            <input type="text" id="customLocation" placeholder="e.g., 거래처 이름, 데모용 창고">
+          </div>
+        </div>
+        <div class="form-group"><label>메모 Notes</label><textarea id="notes" rows="2"></textarea></div>
+        <button class="primary-btn" onclick="moveSelectedItems()" id="moveBtn">이동하기 Move Items</button>
+      </div>
+    </div>
+    <div id="status"></div>
+    <script>
+      const BACKEND_API_BASE = 'https://inventory-proxy.conceptideas0.workers.dev/api';
+      const FETCH_TIMEOUT_MS = 10000;
+      var currentItems = [], selectedItems = [], selectedMove = '';
+      var allItemsCache = [];
+      var allItemsLoaded = false;
+      function authToken() { return localStorage.getItem('inventoryLoginToken') || ''; }
+      function parseJsonResponse(response) {
+        return response.text().then(function(raw) {
+          var data = null;
+          try {
+            data = raw ? JSON.parse(raw) : null;
+          } catch (e) {
+            throw new Error(String(raw || '').trim() || 'Invalid JSON response');
+          }
+          if (!response.ok) {
+            var message = data && (data.message || data.error);
+            throw new Error(message || ('HTTP ' + response.status));
+          }
+          return data;
+        });
+      }
+      function fetchWithTimeout(url, options) {
+        var controller = new AbortController();
+        var timer = setTimeout(function() { controller.abort(); }, FETCH_TIMEOUT_MS);
+        return fetch(url, Object.assign({}, options || {}, { signal: controller.signal }))
+          .finally(function() { clearTimeout(timer); })
+          .catch(function(err) {
+            if (err && err.name === 'AbortError') throw new Error('Request timed out');
+            throw err;
+          });
+      }
+      function isAuthExpiredMessage(msg) {
+        return String(msg || '').toLowerCase().indexOf('invalid or expired auth token') > -1;
+      }
+      function isAuthRequiredMessage(msg) {
+        return String(msg || '').toLowerCase().indexOf('authtoke') > -1;
+      }
+      function handleAuthExpiryFromError(err) {
+        var msg = err && err.message;
+        if (!isAuthExpiredMessage(msg) && !isAuthRequiredMessage(msg)) return false;
+        try {
+          localStorage.removeItem('inventoryLoginToken');
+          localStorage.removeItem('inventoryLoggedInUser');
+        } catch (e) {}
+        alert('세션이 만료되었습니다. Session expired. 다시 로그인해주세요. Please log in again.');
+        goToMenu();
+        return true;
+      }
+      function localDateInputValue(date) {
+        var d = date || new Date();
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + day;
+      }
+      function callApiGet(a, p) {
+        var url = new URL(BACKEND_API_BASE); url.searchParams.set('api', a);
+        var t = authToken(); if (t) { url.searchParams.set('authToken', t); url.searchParams.set('token', t); }
+        Object.keys(p || {}).forEach(k => { if (p[k] != null) url.searchParams.set(k, String(p[k])); });
+        return fetchWithTimeout(url.toString(), { mode: 'cors' }).then(parseJsonResponse);
+      }
+      function callApiPost(a, p) {
+        var url = new URL(BACKEND_API_BASE);
+        url.searchParams.set('api', a);
+        var b = Object.assign({}, p || {});
+        var t = authToken();
+        if (t) { b.authToken = t; url.searchParams.set('authToken', t); url.searchParams.set('token', t); }
+        return fetchWithTimeout(url.toString(), { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) }).then(parseJsonResponse);
+      }
+      function toggleDate() { document.getElementById('movementDate').disabled = document.getElementById('useCurrentDate').checked; }
+      function toggleLocation() {
+        var s = document.querySelector('input[name="location"]:checked');
+        document.getElementById('customLocationGroup').style.display = (s && s.value === '기타 Other') ? 'block' : 'none';
+      }
+      function selectMovement(key) {
+        selectedMove = key;
+        document.querySelectorAll('.movement-btn').forEach(b => b.classList.remove('selected'));
+        document.getElementById(key === 'In' ? 'btnIn' : key === 'Out' ? 'btnOut' : 'btnProb').classList.add('selected');
+        var html = (key === 'In') 
+          ? '<label><input type="radio" name="location" value="Office" checked onchange="toggleLocation()"><span>서울 사무실 Seoul Office</span></label>'
+          : '<label><input type="radio" name="location" value="Suwon" checked onchange="toggleLocation()"><span>수원 사무실 Suwon Office</span></label>';
+        html += '<label><input type="radio" name="location" value="기타 Other" onchange="toggleLocation()"><span>기타 Other</span></label>';
+        document.getElementById('locContainer').innerHTML = html;
+        toggleLocation();
+      }
+      function searchItems() {
+        var t = document.getElementById('searchInput').value.trim();
+        if (allItemsLoaded) {
+          var term = String(t || '').toLowerCase();
+          currentItems = allItemsCache.filter(function(item) {
+            return String((item && item.fullSerial) || '').toLowerCase().indexOf(term) > -1;
+          });
+          displayItems(currentItems, 'searchResults');
+          return;
+        }
+        callApiGet('searchItems', { searchTerm: t }).then(res => {
+          if (res && res.message && (isAuthExpiredMessage(res.message) || isAuthRequiredMessage(res.message))) {
+            goToMenu(); return;
+          }
+          currentItems = res || []; displayItems(currentItems, 'searchResults');
+        }).catch(err => {
+          if (!handleAuthExpiryFromError(err)) {
+            alert('Search failed: ' + err.message);
+          }
+        });
+      }
+      function prefetchAllItems() {
+        if (allItemsLoaded) return;
+        callApiGet('getAllItems').then(function(res) {
+          if (res && res.message && (isAuthExpiredMessage(res.message) || isAuthRequiredMessage(res.message))) {
+            return;
+          }
+          allItemsCache = Array.isArray(res) ? res : [];
+          allItemsLoaded = true;
+        }).catch(function() {});
+      }
+      function displayItems(items, id) {
+        var c = document.getElementById(id); 
+        c.innerHTML = items.length ? items.map(item => {
+          const isSelected = selectedItems.some(sItem => sItem.fullSerial === item.fullSerial);
+          return `<div class="result-item ${isSelected ? 'selected' : ''}" onclick="handleItemClick(this, '${item.fullSerial}')"><div class="result-content"><div class="result-serial">${item.fullSerial}</div><div style="font-size:12px">${item.type} - ${item.model} | ${item.status}</div><div style="font-size:12px; color:#475569;">📍 ${item.location || 'Unknown'}</div></div></div>`;
+        }).join('') : '<div style="padding:20px;text-align:center;">No items found</div>';
+        c.style.display = 'block';
+      }
+      function dismissStatus() {
+        var status = document.getElementById('status');
+        status.style.display = 'none';
+        status.innerHTML = '';
+      }
+      function refreshVisibleLists() {
+        if (document.getElementById('searchResults').style.display === 'block') {
+          displayItems(currentItems, 'searchResults');
+        }
+      }
+      function handleItemClick(element, s) {
+        var i = currentItems.find(x => x.fullSerial === s);
+        var idx = selectedItems.findIndex(x => x.fullSerial === s);
+        if (idx > -1) {
+          selectedItems.splice(idx, 1);
+          element.classList.remove('selected');
+        } else {
+          selectedItems.push(i);
+          element.classList.add('selected');
+        }
+        document.getElementById('moveForm').style.display = selectedItems.length ? 'block' : 'none';
+        if (selectedItems.length && !selectedMove) selectMovement('Out');
+      }
+      function moveSelectedItems() {
+        var locType = document.querySelector('input[name="location"]:checked')?.value;
+        var customLoc = document.getElementById('customLocation').value.trim();
+        if (locType === '기타 Other' && !customLoc) return alert('Please enter location.');
+        var btn = document.getElementById('moveBtn'); btn.disabled = true;
+        var selectedDate = document.getElementById('useCurrentDate').checked ? localDateInputValue(new Date()) : document.getElementById('movementDate').value;
+        var date = new Date(selectedDate + 'T12:00:00').toISOString();
+        
+        var payload = {
+          items: selectedItems,
+          movementKey: selectedMove,
+          personName: localStorage.getItem('inventoryLoggedInUser'),
+          customLocation: customLoc,
+          locationType: locType,
+          notes: document.getElementById('notes').value.trim(),
+          movementDate: date
+        };
+
+        callApiPost('moveScannedItems', payload).then(result => {
+          if (result.success && (!result.failed || result.failed.length === 0)) {
+            var movedSet = new Set((result.moved || []).map(function(s) { return String(s); }));
+            currentItems = currentItems.filter(function(item) { return !movedSet.has(String(item.fullSerial)); });
+            selectedItems = selectedItems.filter(function(item) { return !movedSet.has(String(item.fullSerial)); });
+            refreshVisibleLists();
+            document.getElementById('moveForm').style.display = selectedItems.length ? 'block' : 'none';
+            const status = document.getElementById('status');
+            status.style.display = 'block';
+            status.className = 'success';
+            status.innerHTML = `${result.message}<div class="status-actions"><button class="ok-btn" onclick="dismissStatus()">OK</button></div>`;
+          } else {
+            const status = document.getElementById('status');
+            status.style.display = 'block'; status.className = 'error';
+            let html = `⚠️ ${result.message}<br><br>Affected items:<br>`;
+            const problems = result.failed || [];
+            problems.forEach(p => {
+              html += `<div class="preview-row" style="text-align:left; background:white; margin-top:5px; border-radius:8px; border:1px solid #e2e8f0; padding:10px;"><div><strong>${p.serial || p}</strong><div style="font-size:11px">${p.type || ''} | ${p.model || ''}</div><div style="font-size:11px; color:#334155;">📍 ${p.location || '-'}</div><div style="font-size:10px; color:red;">${p.message || 'Error'}</div></div></div>`;
+            });
+            status.innerHTML = html + '<div class="status-actions"><button class="ok-btn" onclick="dismissStatus()">OK</button></div>';
+          }
+          btn.disabled = false;
+        }).catch(err => { if (!handleAuthExpiryFromError(err)) { alert('Error: ' + err.message); } btn.disabled = false; });
+      }
+      function goToMenu() {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'inventory-nav-menu' }, '*');
+        }
+      }
+      window.onload = function() {
+        if (!authToken()) { goToMenu(); return; }
+        document.getElementById('movementDate').value = localDateInputValue(new Date()); toggleDate();
+        prefetchAllItems();
+      };
+    </script>
+  </body>
+</html>
+
+

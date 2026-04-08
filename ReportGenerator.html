@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+     
+      body {
+        font-family: "SF Pro Rounded", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+        background: linear-gradient(170deg, #f5f7fb 0%, #eef2f7 100%);
+        padding: 25px;
+        font-size: 14px;
+        color: #1e293b;
+        max-width: 600px;
+        margin: 0 auto;
+        overflow-x: hidden;
+        overflow-y: auto;
+      }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #d7e3f4;
+      }
+     
+      .header h2 {
+        font-size: 24px;
+        color: #0f3b5e;
+      }
+      .back-btn {
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        border: none;
+        background: #4a5568;
+        color: #fff;
+        font-size: 20px;
+        font-weight: 700;
+        cursor: pointer;
+        z-index: 1200;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
+      }
+      .back-btn { display: none !important; }
+     
+      .report-card {
+        background: linear-gradient(180deg, #ffffff, #f8fafc);
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 14px 24px -14px rgba(15,23,42,0.35);
+        border: 1px solid #e2e8f0;
+      }
+     
+      .form-group {
+        margin-bottom: 20px;
+      }
+     
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #475569;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+     
+      select, input {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        display: block;
+        padding: 12px 14px;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 14px;
+        font-family: inherit;
+        transition: all 0.2s;
+        background: white;
+      }
+      input, textarea { font-size: 16px; touch-action: manipulation; }
+      input:focus, textarea:focus { outline: none; }
+      input[type="date"], input[type="month"] { -webkit-appearance: none; appearance: none; }
+
+      input:focus, select:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+      }
+     
+      .date-row {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+     
+      .date-col {
+        flex: 1;
+      }
+     
+      .button-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 25px;
+      }
+
+      .button-row {
+        display: flex;
+        gap: 12px;
+        width: 100%;
+      }
+     
+      .primary-btn {
+        background: linear-gradient(145deg, #ffc145, #ec7a72);
+        color: white;
+        border: none;
+        padding: 14px 28px;
+        border-radius: 14px;
+        font-size: 14px;
+        font-weight: 600;
+        flex: 2;
+        min-width: 180px;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 10px 18px -10px rgba(255,193,69,0.55);
+      }
+     
+      .primary-btn:hover {
+        background: linear-gradient(145deg, #efb73f, #dc6f68);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 20px -10px rgba(255,193,69,0.6);
+      }
+     
+      .secondary-btn {
+        background: white;
+        color: #2563eb;
+        border: 2px solid #e2e8f0;
+        padding: 14px 26px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        flex: 1;
+        min-width: 150px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .clear-btn {
+        width: 100%;
+      }
+     
+      .secondary-btn:hover {
+        background: #f8fafc;
+        border-color: #2563eb;
+      }
+
+      @media (max-width: 768px) {
+        body { padding: 14px; max-width: 100%; }
+        .report-card { padding: 14px; overflow: hidden; }
+        select, input { border-width: 1px; font-size: 16px; }
+        .date-row { flex-direction: column; gap: 10px; }
+        .button-row { flex-direction: column; align-items: center; }
+        .primary-btn, .secondary-btn { width: 100%; min-width: 0; flex: none; }
+      }
+     
+      .info-box {
+        background: #e0f2fe;
+        border-left: 4px solid #0284c7;
+        padding: 16px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 13px;
+        color: #0c4a6e;
+      }
+     
+      .preview-box {
+        background: #f8fafc;
+        border: 2px dashed #94a3b8;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        text-align: center;
+        color: #475569;
+      }
+     
+      .status-message {
+        margin-top: 20px;
+        padding: 12px;
+        border-radius: 8px;
+        display: none;
+        font-weight: 500;
+        text-align: center;
+      }
+     
+      .success { background: #dcfce7; color: #166534; border: 1px solid #86efac; display: block; }
+      .error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; display: block; }
+      .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid #f3f3f3; border-top: 2px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 8px; }
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h2>📊 보고서 생성 Create Report</h2>
+      <button class="back-btn" type="button" onclick="goToMenu()" aria-label="Main Menu">&#8592;</button>
+    </div>
+   
+    <div class="report-card">
+      <div class="info-box">
+        <strong>📌 보고서 정보 Report Info</strong><br>
+        • 선택한 기간별 모든 이동 내역을 표시합니다<br>
+        • 종류과 모델로 필터링할 수 있습니다<br>
+      </div>
+     
+      <div class="date-row">
+        <div class="date-col">
+          <div class="form-group">
+            <label>년도 Year</label>
+            <select id="yearSelect">
+              <option value="">선택하세요 Select</option>
+              <option value="All">모두 All</option>
+            </select>
+          </div>
+        </div>
+        <div class="date-col">
+          <div class="form-group">
+            <label>월 Month</label>
+            <select id="monthSelect">
+              <option value="">선택하세요 Select</option>
+              <option value="All">모두 All</option>
+              <option value="1">1월 January</option>
+              <option value="2">2월 February</option>
+              <option value="3">3월 March</option>
+              <option value="4">4월 April</option>
+              <option value="5">5월 May</option>
+              <option value="6">6월 June</option>
+              <option value="7">7월 July</option>
+              <option value="8">8월 August</option>
+              <option value="9">9월 September</option>
+              <option value="10">10월 October</option>
+              <option value="11">11월 November</option>
+              <option value="12">12월 December</option>
+            </select>
+          </div>
+        </div>
+      </div>
+     
+      <div class="form-group">
+        <label>품목 종류 Item Type</label>
+        <select id="typeFilter" onchange="updateModelFilter(this.value)">
+          <option value="All">모든 종류 All Types</option>
+        </select>
+      </div>
+     
+      <div class="form-group">
+        <label>모델 Item Model</label>
+        <select id="modelFilter">
+          <option value="All">모든 모델 All Models</option>
+        </select>
+      </div>
+     
+      <div class="button-group">
+        <div class="button-row">
+          <button class="primary-btn" onclick="generateReport()" id="generateBtn">
+            <span id="btnText">📊 보고서 생성 Generate Report</span>
+          </button>
+          <button class="secondary-btn" id="printBtn" onclick="printReport()" disabled>🖨️ 보고서 인쇄 Print Report</button>
+        </div>
+        <button class="secondary-btn clear-btn" onclick="clearFilters()">초기화 Clear</button>
+        <div id="printHelper" style="display:none; font-size:12px; color:#475569;">보고서 생성 후 인쇄 버튼을 눌러 주세요.</div>
+      </div>
+          
+      <div id="status" class="status-message"></div>
+     
+      <div id="preview" class="preview-box" style="display: none;">
+        <span id="previewText"></span>
+      </div>
+    </div>
+   
+    <script>
+      const API_BASE = 'https://inventory-proxy.conceptideas0.workers.dev/api';
+      const FETCH_TIMEOUT_MS = 10000;
+      var allItems = [];
+      var types = [];
+
+      function authToken() { return localStorage.getItem('inventoryLoginToken') || ''; }
+
+      function parseJsonResponse(response) {
+        return response.text().then(raw => {
+          let data = null;
+          try { data = raw ? JSON.parse(raw) : null; } catch (e) { throw new Error(String(raw || '').trim() || 'Invalid JSON response'); }
+          if (!response.ok) throw new Error((data && (data.message || data.error)) || `HTTP ${response.status}`);
+          return data;
+        });
+      }
+
+      function fetchWithTimeout(url, options) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+        return fetch(url, Object.assign({}, options || {}, { signal: controller.signal }))
+          .finally(() => clearTimeout(timer))
+          .catch(err => {
+            if (err && err.name === 'AbortError') throw new Error('Request timed out');
+            throw err;
+          });
+      }
+
+      function callApiGet(action, params) {
+        const url = new URL(API_BASE);
+        url.searchParams.set('api', action);
+        const token = authToken();
+        if (token) { url.searchParams.set('authToken', token); url.searchParams.set('token', token); }
+        Object.keys(params || {}).forEach(k => { if (params[k] != null) url.searchParams.set(k, String(params[k])); });
+        return fetchWithTimeout(url.toString(), { mode: 'cors' }).then(parseJsonResponse);
+      }
+
+      function callApiPost(action, payload) {
+        const url = new URL(API_BASE);
+        url.searchParams.set('api', action);
+        const body = Object.assign({}, payload || {});
+        const token = authToken();
+        if (token) { body.authToken = token; url.searchParams.set('authToken', token); url.searchParams.set('token', token); }
+        return fetchWithTimeout(url.toString(), {
+          method: 'POST',
+          mode: 'cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        }).then(parseJsonResponse);
+      }
+
+      function expectArray(v, label) {
+        if (Array.isArray(v)) return v;
+        return [];
+      }
+
+      function handleAuthExpiryIfNeeded(error) {
+        const msg = String((error && error.message) || '').toLowerCase();
+        if (msg.indexOf('invalid or expired auth token') > -1 || msg.indexOf('authtoke') > -1) {
+          localStorage.removeItem('inventoryLoginToken');
+          localStorage.removeItem('inventoryLoggedInUser');
+          goToMenu();
+          return true;
+        }
+        return false;
+      }
+
+      function goToMenu() {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'inventory-nav-menu' }, '*');
+        }
+      }
+     
+      function loadInitialData() {
+        const currentYear = new Date().getFullYear();
+        const yearSelect = document.getElementById('yearSelect');
+        for (let year = currentYear; year >= currentYear - 2; year--) {
+          const option = document.createElement('option');
+          option.value = year;
+          option.textContent = `${year}년`;
+          yearSelect.appendChild(option);
+        }
+       
+        callApiGet('getItemTypes').then(res => { types = expectArray(res); updateTypeFilter(); })
+          .catch(err => { if (!handleAuthExpiryIfNeeded(err)) showStatus('Failed to load types', false); });
+       
+        callApiGet('getAllItems').then(items => { allItems = expectArray(items); updateModelFilter(); })
+          .catch(err => { if (!handleAuthExpiryIfNeeded(err)) showStatus('Failed to load items', false); });
+      }
+     
+      function updateTypeFilter() {
+        const select = document.getElementById('typeFilter');
+        select.innerHTML = '<option value="All">모든 종류 All Types</option>';
+        types.forEach(t => { select.innerHTML += `<option value="${t}">${t}</option>`; });
+      }
+     
+      function updateModelFilter(selectedType) {
+        const safeType = selectedType || document.getElementById('typeFilter').value || 'All';
+        const modelSelect = document.getElementById('modelFilter');
+        
+        if (safeType === 'All') {
+          modelSelect.innerHTML = '<option value="All">모든 모델 All Models</option>';
+          if (allItems.length > 0) {
+            const ms = [...new Set(allItems.map(i => i.model).filter(Boolean))].sort();
+            ms.forEach(m => { modelSelect.innerHTML += `<option value="${m}">${m}</option>`; });
+          }
+          return;
+        }
+
+        modelSelect.innerHTML = '<option value="All">로딩 중 Loading...</option>';
+        callApiGet('getModelsByType', { type: safeType })
+          .then(ms => {
+            ms = expectArray(ms);
+            modelSelect.innerHTML = '<option value="All">모든 모델 All Models</option>';
+            ms.forEach(m => { modelSelect.innerHTML += `<option value="${m}">${m}</option>`; });
+          })
+          .catch(() => modelSelect.innerHTML = '<option value="All">모든 모델 All Models</option>');
+      }
+     
+      function showStatus(message, isSuccess) {
+        const status = document.getElementById('status');
+        status.className = isSuccess ? 'success' : 'error';
+        status.textContent = message;
+        status.style.display = 'block';
+        setTimeout(() => { status.style.display = 'none'; }, 5000);
+      }
+     
+      function generateReport() {
+        const yearValue = document.getElementById('yearSelect').value;
+        const monthValue = document.getElementById('monthSelect').value;
+        const type = document.getElementById('typeFilter').value;
+        const model = document.getElementById('modelFilter').value;
+        
+        if (!yearValue || !monthValue) { showStatus('년도와 월을 선택해주세요', false); return; }
+        
+        const btn = document.getElementById('generateBtn');
+        const btnText = document.getElementById('btnText');
+        btn.disabled = true;
+        btnText.innerHTML = '<span class="loading"></span> 생성 중...';
+        
+        callApiPost('generateMonthlyReport', { params: { year: yearValue === 'All' ? null : parseInt(yearValue, 10), month: monthValue === 'All' ? null : parseInt(monthValue, 10), type: type, model: model } })
+          .then(result => {
+            btn.disabled = false;
+            btnText.innerHTML = '📊 보고서 생성 Generate Report';
+            if (result && result.success) {
+              showStatus(`✅ 보고서 생성 완료: ${result.count}개 항목`, true);
+              document.getElementById('previewText').innerHTML = `📋 📊 총 ${result.count}개 내역<br>종류: ${type}<br>모델: ${model}`;
+              document.getElementById('preview').style.display = 'block';
+              document.getElementById('printBtn').disabled = false;
+              document.getElementById('printHelper').style.display = 'block';
+            } else {
+              showStatus('❌ 생성 실패', false);
+            }
+          }).catch(err => {
+            if (!handleAuthExpiryIfNeeded(err)) {
+              btn.disabled = false;
+              btnText.innerHTML = '📊 보고서 생성 Generate Report';
+              showStatus(`❌ 오류: ${err.message}`, false);
+            }
+          });
+      }
+     
+      function clearFilters() {
+        document.getElementById('yearSelect').value = '';
+        document.getElementById('monthSelect').value = '';
+        document.getElementById('typeFilter').value = 'All';
+        document.getElementById('modelFilter').value = 'All';
+        document.getElementById('preview').style.display = 'none';
+        document.getElementById('printBtn').disabled = true;
+      }
+     
+      function printReport() {
+        callApiGet('getReportPdfData').then(res => {
+          if (!res || !res.success || !res.dataBase64) {
+            throw new Error('Invalid report data');
+          }
+          const mimeType = String(res.mimeType || 'application/pdf');
+          const base64 = String(res.dataBase64 || '');
+          const binary = atob(base64);
+          const len = binary.length;
+          const bytes = new Uint8Array(len);
+          for (let i = 0; i < len; i++) {
+            bytes[i] = binary.charCodeAt(i);
+          }
+          const blob = new Blob([bytes], { type: mimeType });
+          const blobUrl = URL.createObjectURL(blob);
+          const w = window.open(blobUrl, '_blank');
+          if (w && typeof w.focus === 'function') {
+            w.focus();
+          }
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+        }).catch(() => showStatus('인쇄 요청 실패', false));
+      }
+
+      window.onload = function() {
+        if (!authToken()) { goToMenu(); return; }
+        loadInitialData();
+      };
+    </script>
+  </body>
+</html>
+

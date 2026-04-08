@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#000000">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="./frontend/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="./frontend/icons/icon-192.png">
+    <title>📦 서울사무실 현황 - Inventory System</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: "SF Pro Rounded", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, "Pretendard", "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+        background: linear-gradient(170deg, #f5f7fb 0%, #eef2f7 52%, #e8edf4 100%);
+        min-height: 100vh;
+        padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+      }
+      
+      .container {
+        max-width: 500px;
+        margin: 0 auto;
+        min-height: calc(100vh - max(20px, env(safe-area-inset-top)) - max(20px, env(safe-area-inset-bottom)));
+      }
+      
+      #mainMenu {
+        min-height: inherit;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .header {
+        background: linear-gradient(155deg, rgba(43, 85, 164, 0.96), rgba(31, 62, 132, 0.94));
+        backdrop-filter: blur(16px) saturate(140%);
+        -webkit-backdrop-filter: blur(16px) saturate(140%);
+        border-radius: 30px;
+        margin: 0 18px;
+        padding: 40px 25px 25px;
+        text-align: center;
+        position: relative;
+        border: 1px solid rgba(255,255,255,0.22);
+      }
+      
+      .header h1 {
+        font-size: 35px;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 8px;
+        letter-spacing: -0.7px;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.28);
+      }
+
+      .header .subtitle {
+        color: #94a3b8;
+        font-size: 17px;
+        font-weight: 500;
+      }
+
+      .header-actions {
+        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .user-badge {
+        padding: 7px 13px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.22);
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        border: 1px solid rgba(255,255,255,0.38);
+      }
+
+      .logout-btn {
+        padding: 7px 13px;
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,0.45);
+        background: rgba(255,255,255,0.08);
+        color: white;
+        font-weight: 600;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.2s;
+      }
+
+      .logout-btn:hover {
+        background: rgba(255,255,255,0.20);
+        transform: translateY(-1px);
+      }
+
+      .login-panel {
+        min-height: calc(100vh - 20px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+
+      .login-card {
+        background: #ffffff;
+        border-radius: 28px;
+        padding: 30px;
+        max-width: 420px;
+        width: 100%;
+        border: 1px solid rgba(226, 232, 240, 0.5);
+        box-shadow: 0 24px 48px rgba(15, 23, 42, 0.25);
+        color: #0f172a;
+      }
+
+      .login-card h2 {
+        font-size: 28px;
+        margin-bottom: 8px;
+        letter-spacing: -0.5px;
+      }
+
+      .login-card small {
+        color: #64748b;
+        display: block;
+        margin-bottom: 24px;
+        font-size: 14px;
+      }
+
+      .login-card .form-group {
+        margin-bottom: 18px;
+      }
+
+      .login-card label {
+        display: block;
+        font-size: 12px;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin-bottom: 6px;
+        font-weight: 700;
+      }
+
+      .login-card input {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 10px;
+        border: 1px solid rgba(226, 232, 240, 0.6);
+        background: #fff;
+        color: #0f172a;
+        font-size: 16px;
+        touch-action: manipulation;
+      }
+
+      .login-card input:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+      }
+
+      .login-btn {
+        width: 100%;
+        padding: 16px 0;
+        border-radius: 12px;
+        border: none;
+        background: #2563eb;
+        color: white;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        font-size: 15px;
+        box-shadow: 0 12px 20px rgba(37, 99, 235, 0.3);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      }
+
+      .login-btn:hover {
+        background: #1d4ed8;
+        transform: translateY(-1px);
+      }
+
+      .login-btn:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+      }
+
+      .status-message {
+        margin-top: 14px;
+        font-size: 13px;
+        padding: 10px;
+        border-radius: 12px;
+        display: none;
+        font-weight: 600;
+        text-align: center;
+      }
+
+      .status-message.error {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+      }
+
+      .status-message.success {
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #86efac;
+      }
+
+      .session-warning-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.35);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        padding: 16px;
+      }
+
+      .session-warning-card {
+        width: min(420px, 100%);
+        background: #ffffff;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        border-radius: 18px;
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+        padding: 18px;
+      }
+
+      .session-warning-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 8px;
+      }
+
+      .session-warning-text {
+        font-size: 14px;
+        color: #334155;
+        margin-bottom: 14px;
+      }
+
+      .session-warning-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+
+      .session-warning-btn {
+        border: none;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .session-warning-btn.extend {
+        background: #2563eb;
+        color: #ffffff;
+      }
+
+      .session-warning-btn.close {
+        background: #e2e8f0;
+        color: #1e293b;
+      }
+      
+      .menu-grid {
+        background: transparent;
+        border-radius: 0;
+        padding: 18px;
+        box-shadow: none;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+      }
+      
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+      
+      .stat-card {
+        background: linear-gradient(145deg, #ffffff, #f3f4f6);
+        border-radius: 18px;
+        padding: 16px 10px;
+        text-align: center;
+        box-shadow: 0 8px 16px -8px rgba(15, 23, 42, 0.22);
+        transition: all 0.3s ease;
+        border: 1px solid rgba(226, 232, 240, 0.7);
+      }
+      
+      .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+      }
+      
+      .stat-value {
+        font-size: 23px;
+        font-weight: 800;
+        color: #2563eb;
+        margin-bottom: 4px;
+        line-height: 1;
+      }
+      
+      .stat-label {
+        color: #475569;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      
+      .menu-item {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 18px 18px;
+        margin-bottom: 8px;
+        border: none;
+        border-radius: 24px;
+        font-size: 19px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        color: white;
+        box-shadow: 0 14px 26px -12px rgba(15, 23, 42, 0.34), inset 0 1px 0 rgba(255,255,255,0.35);
+        position: relative;
+        overflow: hidden;
+        min-height: 74px;
+      }
+
+      .quick-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      .quick-grid .menu-item {
+        margin-bottom: 0;
+        padding: 14px 10px;
+        min-height: 106px;
+        flex-direction: column;
+        justify-content: center;
+        gap: 6px;
+        text-align: center;
+        font-size: 17px;
+        line-height: 1.25;
+        border-radius: 26px;
+      }
+
+      .quick-grid .menu-icon {
+        margin-right: 0;
+      }
+      
+      .menu-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(145deg, rgba(255,255,255,0.2), rgba(255,255,255,0));
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      
+      .menu-item:hover::before {
+        opacity: 1;
+      }
+      
+      .menu-item:hover {
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 25px 30px -10px rgba(0,0,0,0.4);
+      }
+      
+      .menu-icon {
+        width: 40px;
+        height: 40px;
+        background: rgba(255,255,255,0.2);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 21px;
+        margin-right: 12px;
+        backdrop-filter: blur(5px);
+        box-shadow: inset 0 2px 4px rgba(255,255,255,0.3);
+      }
+      
+      .add { background: linear-gradient(145deg, #2dc4c3, #b8dda3); }
+      .scan { background: linear-gradient(145deg, #0e9fbe, #7ec8c7); }
+      .move { background: linear-gradient(145deg, #5f9be7, #9fb9e8); }
+      .scan-move { background: linear-gradient(145deg, #1f3f8e, #13295f); }
+      .search { background: linear-gradient(145deg, #e57a44, #ce8a72); }
+      .dashboard { background: linear-gradient(145deg, #6a73c9, #8a95d9); }
+      .report-gen { background: linear-gradient(145deg, #ffc145, #ec7a72); }
+      .footer {
+        text-align: center;
+        margin-top: 10px;
+        color: #94a3b8;
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+      }
+      
+      .content-frame {
+        background: white;
+        border-radius: 20px;
+        padding: 20px;
+        margin-top: 20px;
+        min-height: calc(100vh - 200px);
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+      }
+
+      .page-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .page-loader {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #2563eb;
+        font-weight: 600;
+      }
+
+      #pageFrame {
+        width: 100%;
+        min-height: 700px;
+        height: 700px;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        overflow: hidden;
+      }
+
+      .back-btn {
+        background: #4a5568;
+        color: white;
+        border: none;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        font-size: 20px;
+        font-weight: 700;
+        cursor: pointer;
+        margin: 0;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        z-index: 1200;
+      }
+      
+      .back-btn:hover {
+        background: #2d3748;
+      }
+
+      @media (max-width: 768px) {
+        body {
+          padding: 8px;
+        }
+        .container {
+          max-width: 100%;
+        }
+        .header {
+          padding: 18px 12px 12px;
+          border-radius: 22px;
+          margin: 0 10px;
+        }
+        .header h1 {
+          font-size: 28px;
+          margin-bottom: 4px;
+        }
+        .header .subtitle {
+          font-size: 16px;
+        }
+        .header-actions {
+          margin-top: 8px;
+          gap: 8px;
+        }
+        .user-badge {
+          font-size: 15px;
+          padding: 4px 8px;
+        }
+        .logout-btn {
+          font-size: 15px;
+          padding: 6px 10px;
+        }
+        .menu-grid {
+          padding: 10px;
+          border-radius: 0;
+        }
+        .stats-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 8px;
+          margin-bottom: 12px;
+        }
+        .stat-card {
+          padding: 18px 10px;
+          border-radius: 14px;
+        }
+        .stat-value {
+          font-size: 27px;
+        }
+        .stat-label {
+          font-size: 14px;
+          letter-spacing: 0.2px;
+        }
+        .menu-item {
+          padding: 18px 16px;
+          margin-bottom: 9px;
+          border-radius: 24px;
+          font-size: 19px;
+          min-height: 80px;
+        }
+        .quick-grid {
+          gap: 9px;
+          margin-bottom: 10px;
+        }
+        .quick-grid .menu-item {
+          min-height: 118px;
+          padding: 16px 10px;
+          font-size: 18px;
+        }
+        .menu-icon {
+          width: 39px;
+          height: 39px;
+          margin-right: 11px;
+          border-radius: 11px;
+          font-size: 21px;
+        }
+        .quick-grid .menu-icon {
+          margin-right: 0;
+        }
+        .footer {
+          margin-top: 12px;
+          font-size: 11px;
+        }
+        .content-frame {
+          padding: 12px;
+          margin-top: 10px;
+        }
+        .login-card {
+          border-radius: 24px;
+          padding: 22px 18px;
+        }
+        #pageFrame {
+          min-height: 700px;
+          height: 700px;
+        }
+        .page-toolbar {
+          flex-wrap: wrap;
+        }
+      }
+
+      @media (max-width: 430px), (max-height: 760px) {
+        body {
+          padding: 6px;
+        }
+        .header {
+          padding: 14px 10px 10px;
+          margin: 0 8px;
+        }
+        .header h1 {
+          font-size: 26px;
+        }
+        .header .subtitle {
+          font-size: 15px;
+        }
+        .user-badge {
+          font-size: 14px;
+        }
+        .logout-btn {
+          font-size: 14px;
+        }
+        .menu-grid {
+          padding: 8px;
+        }
+        .stats-grid {
+          gap: 6px;
+          margin-bottom: 10px;
+        }
+        .stat-card {
+          padding: 16px 8px;
+        }
+        .stat-value {
+          font-size: 25px;
+          margin-bottom: 2px;
+        }
+        .stat-label {
+          font-size: 14px;
+        }
+        .menu-item {
+          padding: 16px 14px;
+          margin-bottom: 6px;
+          border-radius: 24px;
+          font-size: 19px;
+          min-height: 76px;
+        }
+        .quick-grid {
+          gap: 7px;
+          margin-bottom: 8px;
+        }
+        .quick-grid .menu-item {
+          min-height: 110px;
+          padding: 14px 8px;
+          font-size: 18px;
+        }
+        .menu-icon {
+          width: 37px;
+          height: 37px;
+          margin-right: 8px;
+          font-size: 21px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+    <div id="loginPanel" class="login-panel">
+      <div class="login-card">
+        <h2>Login</h2>
+        <div class="form-group">
+          <label for="loginPerson">Name</label>
+          <input type="text" id="loginPerson" placeholder="Enter your name" autocomplete="off" autocorrect="off" autocapitalize="off">
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="Password" autocomplete="off">
+        </div>
+        <button id="loginBtn" class="login-btn" onclick="attemptLogin()">Login</button>
+        <div id="loginStatus" class="status-message"></div>
+      </div>
+    </div>
+      <div id="mainMenu" style="display:none;">
+      <div class="header">
+        <h1>&#x1F4E6; &#xC11C;&#xC6B8;&#xC0AC;&#xBB34;&#xC2E4; &#xD604;&#xD669;</h1>
+        <div class="subtitle">&#xC11C;&#xC6B8;&#xC0AC;&#xBB34;&#xC2E4; &#xC790;&#xC7AC;&#xC785;&#xCD9C;&#xACE0; &#xD604;&#xD669;</div>
+        <div class="header-actions">
+          <div id="userBadge" class="user-badge">&#xB85C;&#xADF8;&#xC778; &#xD544;&#xC694;&#xD569;&#xB2C8;&#xB2E4;</div>
+          <button id="logoutBtn" class="logout-btn" onclick="resetLogin()" style="display:none;">&#xB85C;&#xADF8;&#xC544;&#xC6C3; / Switch user</button>
+        </div>
+      </div>
+        
+        <div class="menu-grid">
+          <div class="stats-grid" id="statsPreview">
+          <div class="stat-card">
+            <div class="stat-value" id="totalItems">-</div>
+            <div class="stat-label">&#xCD1D; &#xD488;&#xBAA9; Total</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="inStock">-</div>
+            <div class="stat-label">&#xC785;&#xACE0; In</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="outStock">-</div>
+            <div class="stat-label">&#xCD9C;&#xACE0; Out</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="problemItems">-</div>
+            <div class="stat-label">&#xBD88;&#xB7C9; Problem</div>
+          </div>
+          </div>
+          <div class="quick-grid">
+            <button class="menu-item add" onclick="openPage('AddItemsWeb')">
+              <span class="menu-icon">&#x271A;</span>
+              &#xB4F1;&#xB85D; Add
+            </button>
+
+            <button class="menu-item scan" onclick="openPage('AddItemsScanWeb')">
+              <span class="menu-icon">&#x26F6;</span>
+              QR &#xB4F1;&#xB85D; Add
+            </button>
+
+            <button class="menu-item move" onclick="openPage('MoveItemWeb')">
+              <span class="menu-icon">&#x21C4;</span>
+              &#xC774;&#xB3D9; Move
+            </button>
+
+            <button class="menu-item scan-move" onclick="openMoveScan()">
+              <span class="menu-icon">&#x21B3;&#x21B0;</span>
+              QR &#xC774;&#xB3D9; Move
+            </button>
+          </div>
+          
+          <button class="menu-item search" onclick="openPage('SearchWeb')">
+            <span class="menu-icon">&#x1F50D;</span>
+            &#xAC80;&#xC0C9; Search
+          </button>
+          
+          <button class="menu-item dashboard" onclick="openPage('DashboardWeb')">
+            <span class="menu-icon">&#x1F4CA;</span>
+            &#xB300;&#xC2DC;&#xBCF4;&#xB4DC; Dashboard
+          </button>
+
+          <button class="menu-item report-gen" onclick="openPage('ReportGenerator')">
+            <span class="menu-icon">📅</span>
+            &#xC6D4;&#xBCC4; &#xBCF4;&#xACE0;&#xC11C; Monthly Report
+          </button>
+          
+        </div>
+        
+      </div>
+      
+      <div id="pageContainer" style="display: none;">
+        <div class="content-frame">
+          <div class="page-toolbar">
+            <button class="back-btn" onclick="goBack()" aria-label="Main Menu">&#8592;</button>
+            <div class="page-loader" id="pageLoader">Loading page...</div>
+            <div class="page-loader" id="pageInfo" style="font-size: 12px; color: #64748b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 160px;">idle</div>
+          </div>
+          <iframe id="pageFrame" frameborder="0" allow="camera; microphone; display-capture"></iframe>
+        </div>
+      </div>
+    </div>
+    <div id="sessionWarningModal" class="session-warning-modal" aria-hidden="true">
+      <div class="session-warning-card">
+        <div class="session-warning-title">&#xC138;&#xC158; Session</div>
+        <div id="sessionWarningText" class="session-warning-text">&#xC138;&#xC158;&#xC774; &#xACE7; &#xB9CC;&#xB8CC;&#xB429;&#xB2C8;&#xB2E4;. Session will expire soon.</div>
+        <div class="session-warning-actions">
+          <button id="closeSessionWarningBtn" class="session-warning-btn close" type="button">&#xB2EB;&#xAE30; Close</button>
+          <button id="extendSessionBtn" class="session-warning-btn extend" type="button">&#xC5F0;&#xC7A5; Extend Session</button>
+        </div>
+      </div>
+    </div>
+    <script>
+    const SCANNER_FRONTEND_URL = 'https://conceptideas0-droid.github.io/controlcheck/QR/index.html';
+      const MAIN_MENU_URL = 'https://conceptideas0-droid.github.io/controlcheck/WebApp.html';
+      const BACKEND_API_BASE = 'https://inventory-proxy.conceptideas0.workers.dev/api';
+      const FETCH_TIMEOUT_MS = 20000;
+      const PAGE_ROUTES = {
+        AddItemsWeb: 'AddItemsWeb.html',
+        MoveItemWeb: 'MoveItemWeb.html',
+        SearchWeb: 'SearchWeb.html',
+        DashboardWeb: 'DashboardWeb.html',
+        ReportGenerator: 'ReportGenerator.html'
+      };
+      var currentPageName = '';
+      var pendingPage = '';
+      var loggedInUserName = '';
+      const PREVIEW_STATS_CACHE_KEY = 'inventoryPreviewStatsCacheV1';
+      const PREVIEW_STATS_CACHE_TTL_MS = 30000;
+      const SESSION_EXPIRES_AT_KEY = 'inventoryLoginExpiresAt';
+      const SESSION_WARNING_SECONDS = 10 * 60;
+      var sessionWatchTimer = null;
+
+    // Global date formatting utilities
+    window.formatDateDisplay = function(dateString) {
+        if (!dateString) return 'Unknown';
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return String(dateString).split(' ')[0]; // Fallback for invalid date string
+            return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date); // YYYY-MM-DD
+        } catch (e) {
+            console.error('Error formatting date:', e, dateString);
+            return String(dateString);
+        }
+    };
+
+    window.formatDateTimeDisplay = function(dateString) {
+        if (!dateString) return 'Unknown';
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return String(dateString); // Fallback for invalid date string
+            return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(date); // YYYY-MM-DD HH:MM
+        } catch (e) {
+            console.error('Error formatting datetime:', e, dateString);
+            return String(dateString);
+        }
+    };
+
+        function parseJsonResponse(response) {
+          return response.text().then(raw => {
+            let data = null;
+            try {
+              data = raw ? JSON.parse(raw) : null;
+            } catch (e) {
+              throw new Error(String(raw || '').trim() || 'Invalid JSON response');
+            }
+            if (!response.ok) {
+              const message = data && (data.message || data.error);
+              throw new Error(message || `HTTP ${response.status}`);
+            }
+            return data;
+          });
+        }
+
+        function fetchWithTimeout(url, options) {
+          const timeoutMs = Number((options && options.timeoutMs) || FETCH_TIMEOUT_MS);
+          const fetchOptions = Object.assign({}, options || {});
+          delete fetchOptions.timeoutMs;
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), timeoutMs);
+          return fetch(url, Object.assign({}, fetchOptions, { signal: controller.signal }))
+            .finally(() => clearTimeout(timer))
+            .catch(error => {
+              if (error && error.name === 'AbortError') {
+                throw new Error(`Request timed out after ${timeoutMs}ms`);
+              }
+              throw error;
+            });
+        }
+
+        function getAuthToken() {
+          try {
+            return localStorage.getItem('inventoryLoginToken') || '';
+          } catch (e) {
+            return '';
+          }
+        }
+
+        function getStoredSessionExpiresAt() {
+          try {
+            const raw = localStorage.getItem(SESSION_EXPIRES_AT_KEY);
+            const value = Number(raw || 0);
+            return value > 0 ? value : 0;
+          } catch (e) {
+            return 0;
+          }
+        }
+
+        function setStoredSessionExpiresAt(expiresAtMs) {
+          try {
+            const safe = Number(expiresAtMs || 0);
+            if (safe > 0) {
+              localStorage.setItem(SESSION_EXPIRES_AT_KEY, String(safe));
+            } else {
+              localStorage.removeItem(SESSION_EXPIRES_AT_KEY);
+            }
+          } catch (e) {}
+        }
+
+        function getExpiresAtFromResult(result) {
+          const direct = Number(result && result.expiresAt);
+          if (direct > 0) return direct;
+          const seconds = Number(result && result.expiresInSeconds);
+          if (seconds > 0) return Date.now() + (seconds * 1000);
+          return 0;
+        }
+
+        function hideSessionWarning() {
+          const modal = document.getElementById('sessionWarningModal');
+          if (!modal) return;
+          modal.style.display = 'none';
+          modal.setAttribute('aria-hidden', 'true');
+        }
+
+        function showSessionWarning(remainingSeconds) {
+          const modal = document.getElementById('sessionWarningModal');
+          const text = document.getElementById('sessionWarningText');
+          if (!modal || !text) return;
+          const mins = Math.max(1, Math.ceil(Number(remainingSeconds || 0) / 60));
+          text.textContent = `\uC138\uC158\uC774 \uC57D ${mins}\uBD84 \uD6C4 \uB9CC\uB8CC\uB429\uB2C8\uB2E4. Session expires in about ${mins} minute(s).`;
+          modal.style.display = 'flex';
+          modal.setAttribute('aria-hidden', 'false');
+        }
+
+        function stopSessionWatcher() {
+          if (sessionWatchTimer) {
+            clearInterval(sessionWatchTimer);
+            sessionWatchTimer = null;
+          }
+          hideSessionWarning();
+        }
+
+        function evaluateSessionWarning() {
+          const token = getAuthToken();
+          const expiresAt = getStoredSessionExpiresAt();
+          if (!token || !expiresAt) {
+            hideSessionWarning();
+            return;
+          }
+          const remainingSeconds = Math.floor((expiresAt - Date.now()) / 1000);
+          if (remainingSeconds <= 0) {
+            hideSessionWarning();
+            return;
+          }
+          if (remainingSeconds <= SESSION_WARNING_SECONDS) {
+            showSessionWarning(remainingSeconds);
+          } else {
+            hideSessionWarning();
+          }
+        }
+
+        function startSessionWatcher() {
+          stopSessionWatcher();
+          sessionWatchTimer = setInterval(evaluateSessionWarning, 15000);
+          evaluateSessionWarning();
+        }
+
+        function applySessionFromAuthResult(result) {
+          const token = result && result.token ? String(result.token) : '';
+          if (token) {
+            try {
+              localStorage.setItem('inventoryLoginToken', token);
+            } catch (e) {}
+          }
+          const expiresAt = getExpiresAtFromResult(result || {});
+          setStoredSessionExpiresAt(expiresAt);
+          if (getAuthToken() && expiresAt > 0) {
+            startSessionWatcher();
+          }
+        }
+
+        function extendSession() {
+          const btn = document.getElementById('extendSessionBtn');
+          if (btn) btn.disabled = true;
+          return callApiPost('extendSession', {}, { timeoutMs: 20000 })
+            .then((result) => {
+              if (!result || !result.success || !result.token) {
+                throw new Error((result && result.message) || 'Failed to extend session');
+              }
+              applySessionFromAuthResult(result);
+              hideSessionWarning();
+            })
+            .catch((error) => {
+              if (isAuthSessionErrorMessage(error && error.message)) {
+                resetLogin();
+                showLoginStatus('\uC138\uC158\uC774 \uB9CC\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4. Session expired. \uB2E4\uC2DC \uB85C\uADF8\uC778\uD574\uC8FC\uC138\uC694. Please log in again.', true);
+                return;
+              }
+              alert(`Session extension failed: ${error && error.message ? error.message : 'Unknown error'}`);
+            })
+            .finally(() => {
+              if (btn) btn.disabled = false;
+            });
+        }
+
+        function callApiGet(action, params, options) {
+          const url = new URL(BACKEND_API_BASE);
+          url.searchParams.set('api', action);
+          const authToken = getAuthToken();
+          if (authToken) {
+            url.searchParams.set('authToken', authToken);
+            url.searchParams.set('token', authToken);
+          }
+          Object.keys(params || {}).forEach(key => {
+            if (params[key] !== undefined && params[key] !== null) {
+              url.searchParams.set(key, String(params[key]));
+            }
+          });
+          return fetchWithTimeout(url.toString(), Object.assign({ mode: 'cors' }, options || {})).then(parseJsonResponse);
+        }
+
+        function callApiPost(action, payload, options) {
+          const url = new URL(BACKEND_API_BASE);
+          url.searchParams.set('api', action);
+          const body = Object.assign({}, payload || {});
+          const authToken = getAuthToken();
+          if (authToken) {
+            body.authToken = authToken;
+            url.searchParams.set('authToken', authToken); url.searchParams.set('token', authToken);
+          }
+          return fetchWithTimeout(url.toString(), Object.assign({
+            method: 'POST',
+            mode: 'cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          }, options || {})).then(parseJsonResponse);
+        }
+
+        function getFrontendRootUrl() {
+          return MAIN_MENU_URL;
+        }
+
+        function buildPageUrl(pageName) {
+          const target = PAGE_ROUTES[pageName];
+          if (!target) {
+            return getFrontendRootUrl();
+          }
+          return new URL(target, window.location.origin + window.location.pathname).toString();
+        }
+
+        function removeQueryParam(rawUrl, param) {
+          if (!rawUrl) return rawUrl;
+          const url = new URL(rawUrl);
+          url.searchParams.delete(param);
+          return url.toString();
+        }
+
+        function autoLoginFromToken(token) {
+          if (!token) return;
+          callApiGet('validateLoginToken', { token })
+            .then(data => {
+              if (data && data.success && data.name) {
+                try {
+                  localStorage.setItem('inventoryLoginToken', token);
+                } catch (e) {}
+                applySessionFromAuthResult({
+                  token: token,
+                  expiresAt: data.expiresAt,
+                  expiresInSeconds: data.expiresInSeconds
+                });
+                setLoggedInUser(data.name);
+                const clean = removeQueryParam(window.location.toString(), 'loginToken');
+                window.history.replaceState({}, '', clean);
+              } else {
+                showLoginStatus('Token validation failed.', true);
+              }
+            })
+            .catch(() => {
+              showLoginStatus('Token validation failed.', true);
+            });
+        }
+
+      function bootstrapExecUrl(onReady) {
+        if (typeof onReady === 'function') {
+          onReady(getFrontendRootUrl());
+        }
+        if (pendingPage) {
+          const pending = pendingPage;
+          pendingPage = '';
+          loadPageIntoFrame(pending);
+        }
+      }
+
+      function isAuthSessionErrorMessage(msg) {
+        const lower = String(msg || '').toLowerCase();
+        return lower.indexOf('invalid or expired auth token') > -1 || lower.indexOf('authtoke') > -1;
+      }
+
+      function loadPreviewStats(retryCount) {
+        const retries = Number(retryCount || 0);
+        const applyStats = (stats) => {
+          document.getElementById('totalItems').textContent = stats.totalItems || '0';
+          document.getElementById('inStock').textContent = stats.inStock || '0';
+          document.getElementById('outStock').textContent = stats.outStock || '0';
+          document.getElementById('problemItems').textContent = stats.problemItems || '0';
+        };
+        const readCachedStats = () => {
+          try {
+            const raw = localStorage.getItem(PREVIEW_STATS_CACHE_KEY);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (!parsed || !parsed.ts || !parsed.data) return null;
+            if ((Date.now() - Number(parsed.ts || 0)) > PREVIEW_STATS_CACHE_TTL_MS) return null;
+            return parsed.data;
+          } catch (e) {
+            return null;
+          }
+        };
+        const writeCachedStats = (stats) => {
+          try {
+            localStorage.setItem(PREVIEW_STATS_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: stats }));
+          } catch (e) {}
+        };
+        if (!getAuthToken()) {
+          document.getElementById('totalItems').textContent = '-';
+          document.getElementById('inStock').textContent = '-';
+          document.getElementById('outStock').textContent = '-';
+          document.getElementById('problemItems').textContent = '-';
+          return;
+        }
+        const cachedStats = readCachedStats();
+        if (cachedStats) {
+          applyStats(cachedStats);
+        }
+        callApiGet('getDashboardStats')
+          .then((stats) => {
+            if (stats && stats.success === false) {
+              throw new Error(stats.message || 'Failed to load dashboard stats');
+            }
+            applyStats(stats || {});
+            writeCachedStats(stats || {});
+          })
+          .catch((error) => {
+            console.error('Error loading stats:', error);
+            if (isAuthSessionErrorMessage(error && error.message)) {
+              resetLogin();
+              showLoginStatus('\uC138\uC158\uC774 \uB9CC\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4. Session expired. \uB2E4\uC2DC \uB85C\uADF8\uC778\uD574\uC8FC\uC138\uC694. Please log in again.', true);
+              return;
+            }
+            if (retries < 1) {
+              setTimeout(() => loadPreviewStats(retries + 1), 300);
+              return;
+            }
+            if (cachedStats) {
+              return;
+            }
+            document.getElementById('totalItems').textContent = '-';
+            document.getElementById('inStock').textContent = '-';
+            document.getElementById('outStock').textContent = '-';
+            document.getElementById('problemItems').textContent = '-';
+        });
+      }
+
+      function showLoginStatus(message, isError) {
+        const status = document.getElementById('loginStatus');
+        if (!message) {
+          status.style.display = 'none';
+          status.textContent = '';
+          return;
+        }
+        status.textContent = message;
+        status.className = 'status-message ' + (isError ? 'error' : 'success');
+        status.style.display = 'block';
+      }
+
+      function attemptLogin() {
+        const person = document.getElementById('loginPerson').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        if (!person || !password) {
+          showLoginStatus('\uC774\uB984\uACFC \uBE44\uBC00\uBC88\uD638\uB97C \uBAA8\uB450 \uC785\uB825\uD574\uC8FC\uC138\uC694 Please enter both name and password.', true);
+          return;
+        }
+        const btn = document.getElementById('loginBtn');
+        btn.disabled = true;
+        showLoginStatus('\uB85C\uADF8\uC778 \uC911\uC785\uB2C8\uB2E4...', false);
+        callApiPost('validateLogin', { name: person, password: password }, { timeoutMs: 45000 })
+          .then(handleLoginResponse)
+          .catch((error) => {
+            btn.disabled = false;
+            showLoginStatus(`\uB85C\uADF8\uC778 \uC2E4\uD328: ${error.message || '\uB124\uD2B8\uC6CC\uD06C \uC624\uB958'}`, true);
+          });
+      }
+
+      function handleLoginResponse(result) {
+        const btn = document.getElementById('loginBtn');
+        btn.disabled = false;
+        if (result && result.success) {
+          applySessionFromAuthResult(result);
+          setLoggedInUser(result.name);
+          document.getElementById('loginPassword').value = '';
+          showLoginStatus('\uD658\uC601\uD569\uB2C8\uB2E4!', false);
+        } else {
+          showLoginStatus(result ? result.message : '\uB85C\uADF8\uC778\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4', true);
+        }
+      }
+
+      function setLoggedInUser(name) {
+        loggedInUserName = name;
+        window.loggedInUserName = name;
+        try {
+          localStorage.setItem('inventoryLoggedInUser', name);
+        } catch (e) {
+          console.warn('Unable to store login locally', e);
+        }
+        document.getElementById('loginPanel').style.display = 'none';
+        document.getElementById('mainMenu').style.display = 'block';
+        document.getElementById('logoutBtn').style.display = 'inline-flex';
+        document.getElementById('userBadge').textContent = `\uC774\uB984: ${name}`;
+        startSessionWatcher();
+        loadPreviewStats();
+      }
+
+      function restoreSessionFromStorage() {
+        try {
+          const stored = localStorage.getItem('inventoryLoggedInUser');
+          const token = localStorage.getItem('inventoryLoginToken');
+          if (stored && token) {
+            setLoggedInUser(stored);
+            return true;
+          }
+        } catch (e) {
+          console.warn('Unable to restore stored session', e);
+        }
+        return false;
+      }
+
+      function validateStoredSessionToken() {
+        const token = getAuthToken();
+        if (!token) {
+          return Promise.resolve(false);
+        }
+        return callApiGet('validateLoginToken', { token: token })
+          .then((result) => {
+            if (result && result.success && result.name) {
+              applySessionFromAuthResult({
+                token: token,
+                expiresAt: result.expiresAt,
+                expiresInSeconds: result.expiresInSeconds
+              });
+              return result;
+            }
+            return false;
+          })
+          .catch((error) => {
+            const msg = String((error && error.message) || '').toLowerCase();
+            if (msg.indexOf('invalid or expired auth token') > -1 || msg.indexOf('authtoke') > -1) {
+              return false;
+            }
+            return null;
+          });
+      }
+
+      function resetLogin() {
+        loggedInUserName = '';
+        window.loggedInUserName = '';
+        try {
+          localStorage.removeItem('inventoryLoggedInUser');
+          localStorage.removeItem('inventoryLoginToken');
+          localStorage.removeItem(SESSION_EXPIRES_AT_KEY);
+        } catch (e) {
+          console.warn('Unable to clear stored login', e);
+        }
+        stopSessionWatcher();
+        document.getElementById('loginPanel').style.display = 'flex';
+        document.getElementById('mainMenu').style.display = 'none';
+        document.getElementById('pageContainer').style.display = 'none';
+        document.getElementById('pageFrame').src = 'about:blank';
+        document.getElementById('logoutBtn').style.display = 'none';
+        document.getElementById('userBadge').textContent = '\uB85C\uADF8\uC778 \uD544\uC694\uD569\uB2C8\uB2E4';
+        document.getElementById('loginPerson').value = '';
+        showLoginStatus('', false);
+        
+      }
+
+      function getExecFrameUrl(pageName) {
+        return buildPageUrl(pageName);
+      }
+
+      function openPage(pageName) {
+        if (!loggedInUserName) {
+          showLoginStatus('\uBA3C\uC800 \uB85C\uADF8\uC778\uD574\uC8FC\uC138\uC694', true);
+          return;
+        }
+        if (!getAuthToken()) {
+          resetLogin();
+          showLoginStatus('\uC138\uC158\uC774 \uB9CC\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4. Session expired. \uB2E4\uC2DC \uB85C\uADF8\uC778\uD574\uC8FC\uC138\uC694. Please log in again.', true);
+          return;
+        }
+
+        if (pageName === 'AddItemsScanWeb') {
+          openStandalonePage(pageName, 'add');
+          return;
+        }
+        document.getElementById('mainMenu').style.display = 'none';
+        document.getElementById('pageContainer').style.display = 'block';
+        loadPageIntoFrame(pageName);
+      }
+
+      function openMoveScan() {
+        openStandalonePage('AddItemsScanWeb', 'move');
+      }
+
+      function openStandalonePage(pageName, scannerMode, retryCount) {
+        const mode = String(scannerMode || 'add').toLowerCase() === 'move' ? 'move' : 'add';
+        const retries = Number(retryCount || 0);
+        showLoader(true);
+        callApiGet('generateScannerToken', { name: loggedInUserName, mode: mode })
+          .then(result => {
+            if (!result || !result.success || !result.token) {
+              showLoader(false);
+              if (retries < 2) {
+                setTimeout(() => openStandalonePage(pageName, mode, retries + 1), 300);
+                return;
+              }
+              const msg = result && result.message
+                ? `\uC2A4\uCE90\uB108 \uD1A0\uD070 \uC0DD\uC131 \uC2E4\uD328: ${result.message}`
+                : '\uC2A4\uCE90\uB108 \uD1A0\uD070 \uC0DD\uC131 \uC2E4\uD328 Unable to create scanner token.';
+              if (result && result.message && String(result.message).toLowerCase().indexOf('invalid or expired auth token') > -1) {
+                resetLogin();
+                showLoginStatus('\uC138\uC158\uC774 \uB9CC\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4. Session expired. \uB2E4\uC2DC \uB85C\uADF8\uC778\uD574\uC8FC\uC138\uC694. Please log in again.', true);
+                return;
+              }
+              showLoginStatus(msg, true);
+              alert(msg);
+              return;
+            }
+            const returnUrl = encodeURIComponent(getFrontendRootUrl());
+            const scannerModeParam = encodeURIComponent(result.mode || mode);
+            const redirectUrl = `${SCANNER_FRONTEND_URL}?token=${encodeURIComponent(result.token)}&mode=${scannerModeParam}&returnUrl=${returnUrl}`;
+            document.getElementById('mainMenu').style.display = 'none';
+            document.getElementById('pageContainer').style.display = 'block';
+            loadPageIntoFrameUrl(redirectUrl, pageName);
+            showLoader(false);
+          })
+          .catch(error => {
+            showLoader(false);
+            if (retries < 2) {
+              setTimeout(() => openStandalonePage(pageName, mode, retries + 1), 300);
+              return;
+            }
+            console.error('Scanner token error', error);
+            const msg = `\uC2A4\uCE90\uB108 \uD1A0\uD070 \uC624\uB958 Scanner token error: ${error && error.message ? error.message : 'Unknown error'}`;
+            showLoginStatus(msg, true);
+            alert(msg);
+          });
+      }
+
+      function loadPageIntoFrame(pageName) {
+        const pageFrame = document.getElementById('pageFrame');
+        const pageInfo = document.getElementById('pageInfo');
+
+        showLoader(true);
+        currentPageName = pageName;
+        const targetUrl = getExecFrameUrl(pageName);
+        console.log('loading', pageName, targetUrl);
+        pageFrame.src = targetUrl;
+        if (pageInfo) {
+          pageInfo.textContent = `loading ${pageName}`;
+        }
+      }
+
+      function loadPageIntoFrameUrl(targetUrl, pageName) {
+        const pageFrame = document.getElementById('pageFrame');
+        const pageInfo = document.getElementById('pageInfo');
+
+        showLoader(true);
+        currentPageName = pageName || '';
+        pageFrame.src = String(targetUrl || '');
+        if (pageInfo) {
+          pageInfo.textContent = `loading ${pageName || 'page'}`;
+        }
+      }
+
+      function resizeFrameToContent(height) {
+        const pageFrame = document.getElementById('pageFrame');
+        if (!pageFrame) return;
+        const safeHeight = Math.max(700, Math.min(Number(height) + 24, 4200));
+        pageFrame.style.height = `${safeHeight}px`;
+      }
+
+      function tryResizeFromIframe() {
+        if (currentPageName === 'AddItemsScanWeb') {
+          return;
+        }
+        const pageFrame = document.getElementById('pageFrame');
+        if (!pageFrame) return;
+        try {
+          const doc = pageFrame.contentDocument || (pageFrame.contentWindow && pageFrame.contentWindow.document);
+          if (!doc) return;
+          const h = Math.max(
+            doc.body ? doc.body.scrollHeight : 0,
+            doc.documentElement ? doc.documentElement.scrollHeight : 0
+          );
+          if (h > 0) {
+            resizeFrameToContent(h);
+          }
+        } catch (e) {
+          // cross-origin/sandbox access can fail; message-based resizing remains active
+        }
+      }
+
+      function showLoader(show) {
+        const loader = document.getElementById('pageLoader');
+        loader.style.display = show ? 'flex' : 'none';
+      }
+
+      function goBack() {
+        pendingPage = '';
+        const pageInfo = document.getElementById('pageInfo');
+        if (pageInfo) {
+          pageInfo.textContent = 'idle';
+        }
+        document.getElementById('pageContainer').style.display = 'none';
+        document.getElementById('pageFrame').src = 'about:blank';
+        document.getElementById('mainMenu').style.display = 'block';
+        showLoader(false);
+        loadPreviewStats();
+      }
+
+      window.onload = function() {
+        const params = new URLSearchParams(window.location.search);
+        const loginTokenParam = params.get('loginToken');
+        const restored = restoreSessionFromStorage();
+        if (restored) {
+          validateStoredSessionToken().then(valid => {
+            if (valid === false) {
+              resetLogin();
+              showLoginStatus('\uC138\uC158\uC774 \uB9CC\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4. Session expired. \uB2E4\uC2DC \uB85C\uADF8\uC778\uD574\uC8FC\uC138\uC694. Please log in again.', true);
+            } else {
+              loadPreviewStats();
+            }
+          });
+        } else if (loginTokenParam) {
+          autoLoginFromToken(loginTokenParam);
+        }
+        const pageFrame = document.getElementById('pageFrame');
+        pageFrame.addEventListener('load', () => {
+          showLoader(false);
+          tryResizeFromIframe();
+          let attempts = 0;
+          const timer = setInterval(() => {
+            attempts++;
+            tryResizeFromIframe();
+            if (attempts >= 12) {
+              clearInterval(timer);
+            }
+          }, 250);
+          const pageInfo = document.getElementById('pageInfo');
+          if (pageInfo) {
+            try {
+              pageInfo.textContent = pageFrame.contentWindow.location.pathname.split('/').pop() || 'loaded';
+            } catch (e) {
+              pageInfo.textContent = pageFrame.src;
+            }
+          }
+        });
+        window.addEventListener('message', (event) => {
+          if (!event || !event.data) return;
+          if (event.data.type === 'inventory-page-height') {
+            resizeFrameToContent(event.data.height);
+            return;
+          }
+          if (event.data.type === 'inventory-nav-menu') {
+            goBack();
+          }
+        });
+        pageFrame.addEventListener('error', () => {
+          showLoader(false);
+          const pageInfo = document.getElementById('pageInfo');
+          if (pageInfo) {
+            pageInfo.textContent = `failed to load ${currentPageName || 'page'}`;
+          }
+        });
+        const passwordInput = document.getElementById('loginPassword');
+        if (passwordInput) {
+          passwordInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              attemptLogin();
+            }
+          });
+        }
+        const extendBtn = document.getElementById('extendSessionBtn');
+        if (extendBtn) {
+          extendBtn.addEventListener('click', extendSession);
+        }
+        const closeWarnBtn = document.getElementById('closeSessionWarningBtn');
+        if (closeWarnBtn) {
+          closeWarnBtn.addEventListener('click', hideSessionWarning);
+        }
+      };
+    </script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('./sw.js').catch(function(err) {
+            console.error('Service worker registration failed:', err);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>
+
+
+
+
+
+
