@@ -161,7 +161,7 @@
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
     <script>
       const BACKEND_EXEC_URL = 'https://inventory-proxy.conceptideas0.workers.dev/api';
-      const FETCH_TIMEOUT_MS = 15000;
+      const FETCH_TIMEOUT_MS = 30000;
       const SCANNER_INDEX_CACHE_KEY = 'inventoryScannerIndexCacheV1';
       const SCANNER_INDEX_CACHE_TTL_MS = 30000;
       let scannerToken = '', authToken = '', scannerMode = 'add', scannedItems = [], existingSerials = new Set();
