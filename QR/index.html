@@ -29,9 +29,9 @@
       }
       .scanner-page { width: 100%; max-width: 620px; max-height: none; overflow: visible; }
       .hidden { display: none !important; }
-      .scanner-card { background: white; border-radius: 30px; padding: 28px; box-shadow: 0 25px 50px rgba(15, 23, 42, 0.25); border: 1px solid var(--card-border); max-height: none; overflow-x: hidden; overflow-y: auto; background-clip: padding-box; -webkit-mask-image: -webkit-radial-gradient(white, black); }
+      .scanner-card { background: white; border-radius: 28px; padding: 24px; box-shadow: 0 22px 44px rgba(15, 23, 42, 0.22); border: 1px solid rgba(226, 232, 240, 0.55); max-height: none; overflow-x: hidden; overflow-y: auto; background-clip: padding-box; -webkit-mask-image: -webkit-radial-gradient(white, black); }
       body.mode-move .scanner-card { background: linear-gradient(180deg, #ffffff, #f2f5ff); border-color: rgba(99, 102, 241, 0.22); box-shadow: 0 18px 34px -16px rgba(15, 23, 42, 0.32); }
-      body.mode-move .camera-overlay { background: linear-gradient(180deg, #eef2ff, #f8faff); border-color: rgba(99, 102, 241, 0.25); }
+      body.mode-move .camera-overlay { background: transparent; border-color: transparent; }
       body.mode-move .card-title { color: #172554; }
       body.mode-move .card-subtitle { color: #334155; }
       .pill-btn { position: fixed; top: 12px; left: 12px; width: 42px; height: 42px; border-radius: 50%; border: none; background: #4a5568; color: white; font-weight: 700; font-size: 20px; cursor: pointer; z-index: 1200; display: none !important; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25); }
@@ -43,7 +43,7 @@
       input, textarea { width:100%; max-width:100%; min-width:0; display:block; border-radius:10px; border:1px solid var(--card-border); padding:10px 12px; font-size:16px; touch-action: manipulation; background:white; }
       input:focus, textarea:focus { outline: none; }
       input[type="date"] { -webkit-appearance: none; appearance: none; }
-      .camera-overlay { border:1px solid var(--card-border); border-radius:20px; padding:18px; background: linear-gradient(180deg, #f8fafc, #ffffff); }
+      .camera-overlay { border: none; border-radius: 0; padding: 0; background: transparent; }
       .camera-frame { border-radius:16px; background: rgba(15, 23, 42, 0.06); min-height: 280px; margin-bottom: 16px; display:flex; align-items:center; justify-content:center; color:#94a3b8; overflow:hidden; }
       #cameraContainer { width:100%; height:100%; }
       #cameraVideo { width:100%; height:100%; object-fit:cover; border-radius:12px; background:#0f172a; }
@@ -88,7 +88,6 @@
           border-color: rgba(203, 213, 225, 0.55);
           box-shadow: 0 18px 34px -18px rgba(15, 23, 42, 0.28);
         }
-        .camera-overlay,
         .review-section {
           border-radius: 18px;
           border-color: rgba(203, 213, 225, 0.55);
