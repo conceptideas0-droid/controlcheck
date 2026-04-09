@@ -1170,6 +1170,7 @@
         btn.disabled = false;
         if (result && result.success) {
           applySessionFromAuthResult(result);
+          callApiPost('syncPeople', {}, { timeoutMs: 20000 }).catch(() => null);
           setLoggedInUser(result.name);
           document.getElementById('loginPassword').value = '';
           showLoginStatus('\uD658\uC601\uD569\uB2C8\uB2E4!', false);
