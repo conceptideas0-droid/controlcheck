@@ -165,16 +165,32 @@
       function parseNumbers(input) {
         if (!input.trim()) return [];
         var numbers = new Set();
+        var digitOnly = /^\d+$/;
+        var rangeOnly = /^(\d+)\s*-\s*(\d+)$/;
         input.split(',').forEach(p => {
           p = p.trim();
-          if (p.includes('-')) {
-            var r = p.split('-').map(Number);
-            for (var i = r[0]; i <= r[1]; i++) if (!isNaN(i)) numbers.add(i);
-          } else {
-            var n = Number(p); if (!isNaN(n)) numbers.add(n);
+          var m = p.match(rangeOnly);
+          if (m) {
+            var startText = m[1];
+            var endText = m[2];
+            var start = Number(startText);
+            var end = Number(endText);
+            if (!isNaN(start) && !isNaN(end) && end >= start) {
+              var width = Math.max(startText.length, endText.length);
+              for (var i = start; i <= end; i++) {
+                numbers.add(String(i).padStart(width, '0'));
+              }
+            }
+          } else if (digitOnly.test(p)) {
+            numbers.add(p);
           }
         });
-        return Array.from(numbers).sort((a,b) => a-b);
+        return Array.from(numbers).sort((a,b) => {
+          var na = Number(a), nb = Number(b);
+          if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+          if (String(a).length !== String(b).length) return String(a).length - String(b).length;
+          return String(a).localeCompare(String(b));
+        });
       }
       function previewNumbers() {
         var m = document.getElementById('manufNumber').value.toUpperCase().trim();

@@ -217,8 +217,11 @@
         }).catch(function() {});
       }
       function displayItems(items, id) {
+        const sortedItems = [...items].sort((a, b) =>
+          String((a && a.fullSerial) || '').localeCompare(String((b && b.fullSerial) || ''), 'en', { sensitivity: 'base' })
+        );
         var c = document.getElementById(id); 
-        c.innerHTML = items.length ? items.map(item => {
+        c.innerHTML = sortedItems.length ? sortedItems.map(item => {
           const isSelected = selectedItems.some(sItem => sItem.fullSerial === item.fullSerial);
           return `<div class="result-item ${isSelected ? 'selected' : ''}" onclick="handleItemClick(this, '${item.fullSerial}')"><div class="result-content"><div class="result-serial">${item.fullSerial}</div><div style="font-size:12px">${item.type} - ${item.model} | ${item.status}</div><div style="font-size:12px; color:#475569;">📍 ${item.location || 'Unknown'}</div></div></div>`;
         }).join('') : '<div style="padding:20px;text-align:center;">No items found</div>';
