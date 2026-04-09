@@ -105,7 +105,7 @@
       var currentItems = [], selectedItems = [], selectedMove = '';
       var allItemsCache = [];
       var allItemsLoaded = false;
-      function authToken() { return localStorage.getItem('inventoryLoginToken') || ''; }
+      function authToken() { return sessionStorage.getItem('inventoryLoginToken') || ''; }
       function parseJsonResponse(response) {
         return response.text().then(function(raw) {
           var data = null;
@@ -141,7 +141,7 @@
         var msg = err && err.message;
         if (!isAuthExpiredMessage(msg) && !isAuthRequiredMessage(msg)) return false;
         try {
-          localStorage.removeItem('inventoryLoginToken');
+          sessionStorage.removeItem('inventoryLoginToken');
           localStorage.removeItem('inventoryLoggedInUser');
         } catch (e) {}
         alert('세션이 만료되었습니다. Session expired. 다시 로그인해주세요. Please log in again.');
@@ -302,6 +302,7 @@
     </script>
   </body>
 </html>
+
 
 
 

@@ -168,7 +168,7 @@
       let inventoryIndexReady = false;
       let lastScanTimestamp = 0, cameraStream = null, scanRafId = null, scanCanvas = null, scanCtx = null, lastDecodeTs = 0;
 
-      function authTokenVal() { return localStorage.getItem('inventoryLoginToken') || ''; }
+      function authTokenVal() { return sessionStorage.getItem('inventoryLoginToken') || ''; }
       function parseJsonResponse(response) {
         return response.text().then(raw => {
           let data = null;
@@ -647,6 +647,7 @@
     </script>
   </body>
 </html>
+
 
 
 

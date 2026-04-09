@@ -163,7 +163,7 @@
 
       function getAuthToken() {
         try {
-          return localStorage.getItem('inventoryLoginToken') || '';
+          return sessionStorage.getItem('inventoryLoginToken') || '';
         } catch (e) {
           return '';
         }
@@ -226,7 +226,7 @@
         var lower = msg.toLowerCase();
         if (lower.indexOf('invalid or expired auth token') > -1 || lower.indexOf('authtoke') > -1) {
           try {
-            localStorage.removeItem('inventoryLoginToken');
+            sessionStorage.removeItem('inventoryLoginToken');
             localStorage.removeItem('inventoryLoggedInUser');
           } catch (e) {}
           alert('세션이 만료되었습니다. 다시 로그인해주세요.');
@@ -331,6 +331,7 @@
     </script>
   </body>
 </html>
+
 
 
 

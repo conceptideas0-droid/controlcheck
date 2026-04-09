@@ -478,7 +478,7 @@
         });
       }
 
-      function getAuthToken() { return localStorage.getItem('inventoryLoginToken') || ''; }
+      function getAuthToken() { return sessionStorage.getItem('inventoryLoginToken') || ''; }
       function formatDateDisplaySafe(dateString) {
         if (!dateString) return 'Unknown';
         try {
@@ -555,7 +555,7 @@
       function handleAuthExpiryIfNeeded(error) {
         var msg = String((error && error.message) || '').toLowerCase();
         if (msg.indexOf('invalid or expired auth token') > -1 || msg.indexOf('authtoke') > -1) {
-          localStorage.removeItem('inventoryLoginToken');
+          sessionStorage.removeItem('inventoryLoginToken');
           localStorage.removeItem('inventoryLoggedInUser');
           goToMenu();
           return true;
@@ -803,5 +803,6 @@
     </script>
   </body>
 </html>
+
 
 

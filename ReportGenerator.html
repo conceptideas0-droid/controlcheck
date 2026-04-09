@@ -295,7 +295,7 @@
       var allItems = [];
       var types = [];
 
-      function authToken() { return localStorage.getItem('inventoryLoginToken') || ''; }
+      function authToken() { return sessionStorage.getItem('inventoryLoginToken') || ''; }
 
       function parseJsonResponse(response) {
         return response.text().then(raw => {
@@ -348,7 +348,7 @@
       function handleAuthExpiryIfNeeded(error) {
         const msg = String((error && error.message) || '').toLowerCase();
         if (msg.indexOf('invalid or expired auth token') > -1 || msg.indexOf('authtoke') > -1) {
-          localStorage.removeItem('inventoryLoginToken');
+          sessionStorage.removeItem('inventoryLoginToken');
           localStorage.removeItem('inventoryLoggedInUser');
           goToMenu();
           return true;
@@ -490,5 +490,6 @@
     </script>
   </body>
 </html>
+
 
 
