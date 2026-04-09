@@ -665,11 +665,14 @@
           countDiv.style.display = 'none';
           return;
         }
+        const sortedItems = [...items].sort((a, b) =>
+          String(a && a.fullSerial || '').localeCompare(String(b && b.fullSerial || ''), 'en', { sensitivity: 'base' })
+        );
         countDiv.style.display = 'block';
-        countDiv.textContent = `Found ${items.length} item(s)`;
+        countDiv.textContent = `Found ${sortedItems.length} item(s)`;
         
         let html = '';
-        items.forEach(item => {
+        sortedItems.forEach(item => {
           const isSelected = selectedItem && selectedItem.fullSerial === item.fullSerial;
           const dateAddedText = item.dateAdded ? formatDateDisplaySafe(item.dateAdded) : '';
           const lastUpdatedText = item.lastUpdated ? formatDateDisplaySafe(item.lastUpdated) : '';
