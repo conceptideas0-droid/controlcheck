@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
   <head>
     <meta charset="UTF-8">
@@ -66,10 +66,9 @@
     <div id="status"></div>
     <script>
       const BACKEND_API_BASE = 'https://inventory-proxy.conceptideas0.workers.dev/api';
-      const APP_ORIGIN = window.location.origin;
       const FETCH_TIMEOUT_MS = 30000;
       var currentNumbers = [];
-      function authToken() { return sessionStorage.getItem('inventoryLoginToken') || ''; }
+      function authToken() { return localStorage.getItem('inventoryLoginToken') || ''; }
       function parseJsonResponse(response) {
         return response.text().then(function(raw) {
           var data = null;
@@ -105,8 +104,8 @@
         var msg = err && err.message;
         if (!isAuthExpiredMessage(msg) && !isAuthRequiredMessage(msg)) return false;
         try {
-          sessionStorage.removeItem('inventoryLoginToken');
-          sessionStorage.removeItem('inventoryLoggedInUser');
+          localStorage.removeItem('inventoryLoginToken');
+          localStorage.removeItem('inventoryLoggedInUser');
         } catch (e) {}
         alert('세션이 만료되었습니다. Session expired. 다시 로그인해주세요. Please log in again.');
         goToMenu();
@@ -114,20 +113,17 @@
       }
       function callApiGet(a, p) {
         var url = new URL(BACKEND_API_BASE); url.searchParams.set('api', a);
-        var t = authToken();
-        var headers = {};
-        if (t) { headers.Authorization = 'Bearer ' + t; }
+        var t = authToken(); if (t) { url.searchParams.set('authToken', t); url.searchParams.set('token', t); }
         Object.keys(p || {}).forEach(k => { if (p[k] != null) url.searchParams.set(k, String(p[k])); });
-        return fetchWithTimeout(url.toString(), { mode: 'cors', headers: headers }).then(parseJsonResponse);
+        return fetchWithTimeout(url.toString(), { mode: 'cors' }).then(parseJsonResponse);
       }
       function callApiPost(a, payload) {
         var url = new URL(BACKEND_API_BASE);
         url.searchParams.set('api', a);
         var b = Object.assign({}, payload || {});
         var t = authToken();
-        var headers = { 'Content-Type': 'application/json' };
-        if (t) { b.authToken = t; headers.Authorization = 'Bearer ' + t; }
-        return fetchWithTimeout(url.toString(), { method: 'POST', mode: 'cors', headers: headers, body: JSON.stringify(b) }).then(parseJsonResponse);
+        if (t) { b.authToken = t; url.searchParams.set('authToken', t); url.searchParams.set('token', t); }
+        return fetchWithTimeout(url.toString(), { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) }).then(parseJsonResponse);
       }
       function toggleLocation() {
         var s = document.querySelector('input[name="location"]:checked');
@@ -135,7 +131,7 @@
       }
       function goToMenu() {
         if (window.parent && window.parent !== window) {
-          window.parent.postMessage({ type: 'inventory-nav-menu' }, APP_ORIGIN);
+          window.parent.postMessage({ type: 'inventory-nav-menu' }, '*');
         }
       }
       function localDateInputValue(date) {
@@ -151,35 +147,15 @@
           if (res && res.message && (isAuthExpiredMessage(res.message) || isAuthRequiredMessage(res.message))) {
             goToMenu(); return;
           }
-          var s = document.getElementById('itemType');
-          s.innerHTML = '';
-          var placeholder = document.createElement('option');
-          placeholder.value = '';
-          placeholder.textContent = 'Select type...';
-          s.appendChild(placeholder);
-          (res || []).forEach(n => {
-            var opt = document.createElement('option');
-            opt.value = String(n || '');
-            opt.textContent = String(n || '');
-            s.appendChild(opt);
-          });
+          var s = document.getElementById('itemType'); s.innerHTML = '<option value="">Select type...</option>';
+          (res || []).forEach(n => s.innerHTML += `<option value="${n}">${n}</option>`);
         }).catch(err => { if (!handleAuthExpiryFromError(err)) { console.error('Token validation error', err); } });
       }
       function loadModels() {
         var type = document.getElementById('itemType').value; if (!type) return;
         callApiGet('getModelsByType', { type: type }).then(res => {
-          var s = document.getElementById('itemModel');
-          s.innerHTML = '';
-          var placeholder = document.createElement('option');
-          placeholder.value = '';
-          placeholder.textContent = 'Select model...';
-          s.appendChild(placeholder);
-          (res || []).forEach(n => {
-            var opt = document.createElement('option');
-            opt.value = String(n || '');
-            opt.textContent = String(n || '');
-            s.appendChild(opt);
-          });
+          var s = document.getElementById('itemModel'); s.innerHTML = '<option value="">Select model...</option>';
+          (res || []).forEach(n => s.innerHTML += `<option value="${n}">${n}</option>`);
         }).catch(err => {
           if (!handleAuthExpiryFromError(err)) {
             alert('Failed to load models: ' + err.message);
@@ -207,12 +183,7 @@
         var p = document.getElementById('previewArea');
         if (!i.trim() || !m || !s) { p.style.display = 'none'; return; }
         currentNumbers = parseNumbers(i);
-        p.innerHTML = '';
-        currentNumbers.forEach(n => {
-          var row = document.createElement('div');
-          row.textContent = `${m} ${s} ${n}`;
-          p.appendChild(row);
-        });
+        p.innerHTML = currentNumbers.map(n => `<div>${m} ${s} ${n}</div>`).join('');
         p.style.display = 'block';
       }
       function addItems() {
@@ -223,7 +194,7 @@
           manufNumber: document.getElementById('manufNumber').value.toUpperCase().trim(),
           serialCode: document.getElementById('serialCode').value.toUpperCase().trim(),
           numbers: currentNumbers, dateAdded: document.getElementById('dateAdded').value,
-          personName: sessionStorage.getItem('inventoryLoggedInUser'),
+          personName: localStorage.getItem('inventoryLoggedInUser'),
           locationType: locType, customLocation: customLoc,
           itemType: document.getElementById('itemType').value, itemModel: document.getElementById('itemModel').value,
           notes: document.getElementById('notes').value.trim()
@@ -248,6 +219,7 @@
     </script>
   </body>
 </html>
+
 
 
 

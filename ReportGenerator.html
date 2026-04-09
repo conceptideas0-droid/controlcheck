@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
   <head>
     <meta charset="UTF-8">
@@ -231,7 +231,7 @@
           <div class="form-group">
             <label>년도 Year</label>
             <select id="yearSelect">
-              <option value="All" selected>모두 All</option>
+              <option value="All">모두 All</option>
             </select>
           </div>
         </div>
@@ -239,7 +239,7 @@
           <div class="form-group">
             <label>월 Month</label>
             <select id="monthSelect">
-              <option value="All" selected>모두 All</option>
+              <option value="All">모두 All</option>
               <option value="1">1월 January</option>
               <option value="2">2월 February</option>
               <option value="3">3월 March</option>
@@ -292,11 +292,10 @@
     <script>
       const API_BASE = 'https://inventory-proxy.conceptideas0.workers.dev/api';
       const FETCH_TIMEOUT_MS = 30000;
-      const APP_ORIGIN = window.location.origin;
       var allItems = [];
       var types = [];
 
-      function authToken() { return sessionStorage.getItem('inventoryLoginToken') || ''; }
+      function authToken() { return localStorage.getItem('inventoryLoginToken') || ''; }
 
       function parseJsonResponse(response) {
         return response.text().then(raw => {
@@ -322,10 +321,9 @@
         const url = new URL(API_BASE);
         url.searchParams.set('api', action);
         const token = authToken();
-        const headers = {};
-        if (token) { headers.Authorization = 'Bearer ' + token; }
+        if (token) { url.searchParams.set('authToken', token); url.searchParams.set('token', token); }
         Object.keys(params || {}).forEach(k => { if (params[k] != null) url.searchParams.set(k, String(params[k])); });
-        return fetchWithTimeout(url.toString(), { mode: 'cors', headers: headers }).then(parseJsonResponse);
+        return fetchWithTimeout(url.toString(), { mode: 'cors' }).then(parseJsonResponse);
       }
 
       function callApiPost(action, payload) {
@@ -333,22 +331,13 @@
         url.searchParams.set('api', action);
         const body = Object.assign({}, payload || {});
         const token = authToken();
-        const headers = { 'Content-Type': 'application/json' };
-        if (token) { body.authToken = token; headers.Authorization = 'Bearer ' + token; }
+        if (token) { body.authToken = token; url.searchParams.set('authToken', token); url.searchParams.set('token', token); }
         return fetchWithTimeout(url.toString(), {
           method: 'POST',
           mode: 'cors',
-          headers: headers,
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
         }).then(parseJsonResponse);
-      }
-      function escapeHtml(value) {
-        return String(value == null ? '' : value)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;');
       }
 
       function expectArray(v, label) {
@@ -359,8 +348,8 @@
       function handleAuthExpiryIfNeeded(error) {
         const msg = String((error && error.message) || '').toLowerCase();
         if (msg.indexOf('invalid or expired auth token') > -1 || msg.indexOf('authtoke') > -1) {
-          sessionStorage.removeItem('inventoryLoginToken');
-          sessionStorage.removeItem('inventoryLoggedInUser');
+          localStorage.removeItem('inventoryLoginToken');
+          localStorage.removeItem('inventoryLoggedInUser');
           goToMenu();
           return true;
         }
@@ -369,7 +358,7 @@
 
       function goToMenu() {
         if (window.parent && window.parent !== window) {
-          window.parent.postMessage({ type: 'inventory-nav-menu' }, APP_ORIGIN);
+          window.parent.postMessage({ type: 'inventory-nav-menu' }, '*');
         }
       }
      
@@ -393,7 +382,7 @@
       function updateTypeFilter() {
         const select = document.getElementById('typeFilter');
         select.innerHTML = '<option value="All">모든 종류 All Types</option>';
-        types.forEach(t => { select.innerHTML += `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`; });
+        types.forEach(t => { select.innerHTML += `<option value="${t}">${t}</option>`; });
       }
      
       function updateModelFilter(selectedType) {
@@ -404,7 +393,7 @@
           modelSelect.innerHTML = '<option value="All">모든 모델 All Models</option>';
           if (allItems.length > 0) {
             const ms = [...new Set(allItems.map(i => i.model).filter(Boolean))].sort();
-            ms.forEach(m => { modelSelect.innerHTML += `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`; });
+            ms.forEach(m => { modelSelect.innerHTML += `<option value="${m}">${m}</option>`; });
           }
           return;
         }
@@ -414,7 +403,7 @@
           .then(ms => {
             ms = expectArray(ms);
             modelSelect.innerHTML = '<option value="All">모든 모델 All Models</option>';
-            ms.forEach(m => { modelSelect.innerHTML += `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`; });
+            ms.forEach(m => { modelSelect.innerHTML += `<option value="${m}">${m}</option>`; });
           })
           .catch(() => modelSelect.innerHTML = '<option value="All">모든 모델 All Models</option>');
       }
@@ -446,7 +435,7 @@
             btnText.innerHTML = '📊 보고서 생성 Generate Report';
             if (result && result.success) {
               showStatus(`✅ 보고서 생성 완료: ${result.count}개 항목`, true);
-              document.getElementById('previewText').innerHTML = `📋 📊 총 ${escapeHtml(result.count)}개 내역<br>종류: ${escapeHtml(type)}<br>모델: ${escapeHtml(model)}`;
+              document.getElementById('previewText').innerHTML = `📋 📊 총 ${result.count}개 내역<br>종류: ${type}<br>모델: ${model}`;
               document.getElementById('preview').style.display = 'block';
               document.getElementById('printBtn').disabled = false;
               document.getElementById('printHelper').style.display = 'block';
@@ -501,4 +490,5 @@
     </script>
   </body>
 </html>
+
 

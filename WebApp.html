@@ -761,7 +761,9 @@
       const SESSION_EXPIRES_AT_KEY = 'inventoryLoginExpiresAt';
       const SCANNER_TOKEN_SESSION_KEY = 'inventoryScannerToken';
       const SESSION_WARNING_SECONDS = 10 * 60;
+      const SESSION_AUTO_EXTEND_SECONDS = 30 * 60;
       var sessionWatchTimer = null;
+      var sessionAutoExtendInFlight = false;
 
     // Global date formatting utilities
     window.formatDateDisplay = function(dateString) {
@@ -879,7 +881,33 @@
             clearInterval(sessionWatchTimer);
             sessionWatchTimer = null;
           }
+          sessionAutoExtendInFlight = false;
           hideSessionWarning();
+        }
+
+        function extendSessionSilently() {
+          if (sessionAutoExtendInFlight) return Promise.resolve(false);
+          sessionAutoExtendInFlight = true;
+          return callApiPost('extendSession', {}, { timeoutMs: 20000 })
+            .then((result) => {
+              if (!result || !result.success || !result.token) {
+                throw new Error((result && result.message) || 'Failed to extend session');
+              }
+              applySessionFromAuthResult(result);
+              hideSessionWarning();
+              return true;
+            })
+            .catch((error) => {
+              if (isAuthSessionErrorMessage(error && error.message)) {
+                resetLogin();
+                showLoginStatus('\uC138\uC158\uC774 \uB9CC\uB8CC\uB418\uC5C8\uC2B5\uB2C8\uB2E4. Session expired. \uB2E4\uC2DC \uB85C\uADF8\uC778\uD574\uC8FC\uC138\uC694. Please log in again.', true);
+                return false;
+              }
+              return false;
+            })
+            .finally(() => {
+              sessionAutoExtendInFlight = false;
+            });
         }
 
         function evaluateSessionWarning() {
@@ -891,6 +919,11 @@
           }
           const remainingSeconds = Math.floor((expiresAt - Date.now()) / 1000);
           if (remainingSeconds <= 0) {
+            hideSessionWarning();
+            return;
+          }
+          if (remainingSeconds <= SESSION_AUTO_EXTEND_SECONDS) {
+            extendSessionSilently();
             hideSessionWarning();
             return;
           }

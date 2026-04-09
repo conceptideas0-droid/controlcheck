@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
   <head>
     <meta charset="UTF-8">
@@ -133,7 +133,6 @@
     <script>
       const BACKEND_API_BASE = 'https://inventory-proxy.conceptideas0.workers.dev/api';
       const FETCH_TIMEOUT_MS = 30000;
-      const APP_ORIGIN = window.location.origin;
 
       function parseJsonResponse(response) {
         return response.text().then(function(raw) {
@@ -164,7 +163,7 @@
 
       function getAuthToken() {
         try {
-            return sessionStorage.getItem('inventoryLoginToken') || '';
+          return localStorage.getItem('inventoryLoginToken') || '';
         } catch (e) {
           return '';
         }
@@ -174,24 +173,15 @@
         var url = new URL(BACKEND_API_BASE);
         url.searchParams.set('api', action);
         var authToken = getAuthToken();
-        var headers = {};
         if (authToken) {
-          headers.Authorization = 'Bearer ' + authToken;
+          url.searchParams.set('authToken', authToken); url.searchParams.set('token', authToken);
         }
         Object.keys(params || {}).forEach(function(key) {
           if (params[key] !== undefined && params[key] !== null) {
             url.searchParams.set(key, String(params[key]));
           }
         });
-        return fetchWithTimeout(url.toString(), { mode: 'cors', headers: headers }).then(parseJsonResponse);
-      }
-      function escapeHtml(value) {
-        return String(value == null ? '' : value)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;');
+        return fetchWithTimeout(url.toString(), { mode: 'cors' }).then(parseJsonResponse);
       }
 
       function isApiErrorObject(value) {
@@ -236,8 +226,8 @@
         var lower = msg.toLowerCase();
         if (lower.indexOf('invalid or expired auth token') > -1 || lower.indexOf('authtoke') > -1) {
           try {
-            sessionStorage.removeItem('inventoryLoginToken');
-            sessionStorage.removeItem('inventoryLoggedInUser');
+            localStorage.removeItem('inventoryLoginToken');
+            localStorage.removeItem('inventoryLoggedInUser');
           } catch (e) {}
           alert('세션이 만료되었습니다. 다시 로그인해주세요.');
           goToMenu();
@@ -248,7 +238,7 @@
 
       function goToMenu() {
         if (window.parent && window.parent !== window) {
-          window.parent.postMessage({ type: 'inventory-nav-menu' }, APP_ORIGIN);
+          window.parent.postMessage({ type: 'inventory-nav-menu' }, '*');
         }
       }
      
@@ -271,9 +261,9 @@
               return;
             }
             var msg = `Error loading data: ${error.message || error}`;
-            document.getElementById('modelStats').innerHTML = `<div style="color:red">${escapeHtml(msg)}</div>`;
-            document.getElementById('locationStats').innerHTML = `<div style="color:red">${escapeHtml(msg)}</div>`;
-            document.getElementById('recentActivity').innerHTML = `<div style="color:red">${escapeHtml(msg)}</div>`;
+            document.getElementById('modelStats').innerHTML = `<div style="color:red">${msg}</div>`;
+            document.getElementById('locationStats').innerHTML = `<div style="color:red">${msg}</div>`;
+            document.getElementById('recentActivity').innerHTML = `<div style="color:red">${msg}</div>`;
           });
       }
      
@@ -289,7 +279,7 @@
           modelHtml = '<div class="loading">No models found</div>';
         } else {
           Object.entries(models).forEach(([model, count]) => {
-            modelHtml += `<div class="list-item"><span>${escapeHtml(model)}</span><span class="badge" style="background:#e2e8f0">${escapeHtml(count)}</span></div>`;
+            modelHtml += `<div class="list-item"><span>${model}</span><span class="badge" style="background:#e2e8f0">${count}</span></div>`;
           });
         }
         document.getElementById('modelStats').innerHTML = modelHtml;
@@ -300,7 +290,7 @@
           locationHtml = '<div class="loading">No locations found</div>';
         } else {
           Object.entries(locations).forEach(([loc, count]) => {
-            locationHtml += `<div class="list-item"><span>${escapeHtml(loc)}</span><span class="badge" style="background:#e2e8f0">${escapeHtml(count)}</span></div>`;
+            locationHtml += `<div class="list-item"><span>${loc}</span><span class="badge" style="background:#e2e8f0">${count}</span></div>`;
           });
         }
         document.getElementById('locationStats').innerHTML = locationHtml;
@@ -318,8 +308,8 @@
               : 'Unknown';
             activityHtml += `
               <div class="activity-item">
-                <div><strong>${escapeHtml(act.item)}</strong> - ${escapeHtml(act.action)}</div>
-                <div style="color:#64748b; font-size:12px">${escapeHtml(date)} by ${escapeHtml(act.user)}</div>
+                <div><strong>${act.item}</strong> - ${act.action}</div>
+                <div style="color:#64748b; font-size:12px">${date} by ${act.user}</div>
               </div>
             `;
           });
@@ -341,6 +331,7 @@
     </script>
   </body>
 </html>
+
 
 
 

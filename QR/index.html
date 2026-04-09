@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow" />
-    <title>Scanner &middot; Inventory</title>
+    <title>Scanner · Inventory</title>
     <style>
       :root {
         --bg-dark: #050A1F; --card: #f8f9fb; --card-border: rgba(226, 232, 240, 0.4);
@@ -163,14 +163,12 @@
       const FETCH_TIMEOUT_MS = 30000;
       const SCANNER_INDEX_CACHE_KEY = 'inventoryScannerIndexCacheV1';
       const SCANNER_INDEX_CACHE_TTL_MS = 30000;
-      const SCANNER_TOKEN_SESSION_KEY = 'inventoryScannerToken';
-      const APP_ORIGIN = window.location.origin;
       let scannerToken = '', authToken = '', scannerMode = 'add', scannedItems = [], existingSerials = new Set();
       let moveKnownSerials = new Set(), knownItemMeta = new Map();
       let inventoryIndexReady = false;
       let lastScanTimestamp = 0, cameraStream = null, scanRafId = null, scanCanvas = null, scanCtx = null, lastDecodeTs = 0;
 
-      function authTokenVal() { return sessionStorage.getItem('inventoryLoginToken') || ''; }
+      function authTokenVal() { return localStorage.getItem('inventoryLoginToken') || ''; }
       function parseJsonResponse(response) {
         return response.text().then(raw => {
           let data = null;
@@ -198,16 +196,8 @@
       }
       function returnToMenu() {
         if (window.parent && window.parent !== window) {
-          window.parent.postMessage({ type: 'inventory-nav-menu' }, APP_ORIGIN);
+          window.parent.postMessage({ type: 'inventory-nav-menu' }, '*');
         }
-      }
-      function escapeHtml(value) {
-        return String(value == null ? '' : value)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;');
       }
       function normalizeSerial(value) {
         return String(value || '').trim().replace(/\s+/g, ' ').toUpperCase();
@@ -248,27 +238,25 @@
         const url = new URL(BACKEND_EXEC_URL);
         url.searchParams.set('api', action);
         const token = authTokenVal();
-        const headers = {};
-        if (token) headers.Authorization = `Bearer ${token}`;
+        if (token) url.searchParams.set('authToken', token);
         Object.keys(params || {}).forEach(k => {
           if (params[k] !== undefined && params[k] !== null) url.searchParams.set(k, String(params[k]));
         });
-        return fetchWithTimeout(url.toString(), { mode: 'cors', headers: headers }).then(parseJsonResponse);
+        return fetchWithTimeout(url.toString(), { mode: 'cors' }).then(parseJsonResponse);
       }
       function apiPost(action, payload) {
         const url = new URL(BACKEND_EXEC_URL);
         url.searchParams.set('api', action);
         const body = Object.assign({}, payload || {});
         const token = authTokenVal();
-        const headers = { 'Content-Type': 'application/json' };
         if (token) {
           body.authToken = token;
-          headers.Authorization = `Bearer ${token}`;
+          url.searchParams.set('authToken', token);
         }
         return fetchWithTimeout(url.toString(), {
           method: 'POST',
           mode: 'cors',
-          headers: headers,
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
         }).then(parseJsonResponse);
       }
@@ -371,9 +359,15 @@
         });
       }
 
+      function invalidateScannerIndexCache() {
+        try {
+          sessionStorage.removeItem(SCANNER_INDEX_CACHE_KEY);
+        } catch (e) {}
+      }
+
       function validateScannerTokenWithRetry(retryCount) {
         const retries = Number(retryCount || 0);
-        return apiPost('validateScannerToken', { token: scannerToken })
+        return apiGet('validateScannerToken', { token: scannerToken })
           .then(result => {
             if (result && result.valid) return true;
             if (retries < 2) {
@@ -432,10 +426,10 @@
           const tagText = scannerMode === 'add' ? (item.alreadyExists ? '이미 등록' : '') : (item.alreadyExists ? '' : '없음');
           const tagHtml = tagText ? `<span class="tag">${tagText}</span>` : '';
           const locationHtml = scannerMode === 'move'
-            ? `<div style="font-size:11px; color:#334155;">📍 ${escapeHtml(item.itemLocation || '-')}</div>`
+            ? `<div style="font-size:11px; color:#334155;">📍 ${item.itemLocation || '-'}</div>`
             : '';
           const d = document.createElement('div'); d.className = 'preview-row';
-          d.innerHTML = `<div class="preview-main"><strong>${escapeHtml(item.fullSerial)}</strong><div style="font-size:11px; color:#475569;">${escapeHtml(item.itemType || '-')} | ${escapeHtml(item.itemModel || '-')}</div>${locationHtml}</div><div style="display:flex; align-items:center; gap:6px;">${tagHtml}<button type="button" class="preview-remove-btn" onclick="removeScannedItemByIndex(${originalIndex})" aria-label="Remove scanned item">×</button></div>`;
+          d.innerHTML = `<div class="preview-main"><strong>${item.fullSerial}</strong><div style="font-size:11px; color:#475569;">${item.itemType || '-'} | ${item.itemModel || '-'}</div>${locationHtml}</div><div style="display:flex; align-items:center; gap:6px;">${tagHtml}<button type="button" class="preview-remove-btn" onclick="removeScannedItemByIndex(${originalIndex})" aria-label="Remove scanned item">×</button></div>`;
           list.appendChild(d);
         });
       }
@@ -533,9 +527,9 @@
           const tagText = scannerMode === 'add' ? (item.alreadyExists ? '이미 등록' : '') : (item.alreadyExists ? '' : '없음');
           const tagHtml = tagText ? `<span class="tag">${tagText}</span>` : '';
           const locationHtml = scannerMode === 'move'
-            ? `<div style="font-size:11px; color:#334155;">📍 ${escapeHtml(item.itemLocation || '-')}</div>`
+            ? `<div style="font-size:11px; color:#334155;">📍 ${item.itemLocation || '-'}</div>`
             : '';
-          return `<div class="preview-row"><div class="preview-main"><strong>${escapeHtml(item.fullSerial)}</strong><div style="font-size:11px; color:#475569;">${escapeHtml(item.itemType || '-')} | ${escapeHtml(item.itemModel || '-')}</div>${locationHtml}</div><div style="display:flex; align-items:center; gap:6px;">${tagHtml}<button type="button" class="preview-remove-btn" onclick="removeScannedItemByIndex(${idx})" aria-label="Remove scanned item">×</button></div></div>`;
+          return `<div class="preview-row"><div class="preview-main"><strong>${item.fullSerial}</strong><div style="font-size:11px; color:#475569;">${item.itemType || '-'} | ${item.itemModel || '-'}</div>${locationHtml}</div><div style="display:flex; align-items:center; gap:6px;">${tagHtml}<button type="button" class="preview-remove-btn" onclick="removeScannedItemByIndex(${idx})" aria-label="Remove scanned item">×</button></div></div>`;
         }).join('');
       }
 
@@ -557,12 +551,6 @@
         const status = document.getElementById('submitStatus');
         status.style.display = 'none';
         status.textContent = '';
-      }
-
-      function invalidateScannerIndexCache() {
-        try {
-          sessionStorage.removeItem(SCANNER_INDEX_CACHE_KEY);
-        } catch (e) {}
       }
 
       document.getElementById('submitBtn').addEventListener('click', async () => {
@@ -587,10 +575,8 @@
             if (result && result.message && isAuthSessionError(result.message)) {
               alert('세션이 만료되었습니다. 다시 로그인해주세요.'); returnToMenu(); return;
             }
-            if (result && result.success) {
-              invalidateScannerIndexCache();
-            }
             if (scannerMode === 'move' && Array.isArray(result.moved) && result.moved.length) {
+              invalidateScannerIndexCache();
               const movedSet = new Set(result.moved.map(serial => normalizeSerial(serial)));
               scannedItems = scannedItems.filter(item => !movedSet.has(normalizeSerial(item.fullSerial)));
               syncScannedStats();
@@ -599,10 +585,10 @@
             }
             const status = document.getElementById('submitStatus');
             status.style.display = 'block'; status.className = 'status-message error';
-            let html = `⚠️ ${escapeHtml(result.message)}<br><br>확인 필요 품목 Affected items:<br>`;
+            let html = `⚠️ ${result.message}<br><br>확인 필요 품목 Affected items:<br>`;
             const problems = result.failed || result.duplicates || [];
             problems.forEach(p => {
-              html += `<div class="preview-row" style="text-align:left; background:white; margin-top:5px;"><div><strong>${escapeHtml(p.serial || p)}</strong><div style="font-size:11px">${escapeHtml(p.type || '')} | ${escapeHtml(p.model || '')}</div><div style="font-size:10px; color:red;">${escapeHtml(p.message || 'Already registered')}</div></div></div>`;
+              html += `<div class="preview-row" style="text-align:left; background:white; margin-top:5px;"><div><strong>${p.serial || p}</strong><div style="font-size:11px">${p.type || ''} | ${p.model || ''}</div><div style="font-size:10px; color:red;">${p.message || 'Already registered'}</div></div></div>`;
             });
             status.innerHTML = html + '<div style="margin-top:10px;"><button type="button" id="submitStatusOkBtn" class="primary-btn" style="padding:8px 16px;">OK</button></div>';
             const okBtn = document.getElementById('submitStatusOkBtn');
@@ -629,8 +615,7 @@
 
       window.addEventListener('DOMContentLoaded', () => {
         const p = new URLSearchParams(window.location.search);
-        scannerToken = sessionStorage.getItem(SCANNER_TOKEN_SESSION_KEY) || '';
-        scannerMode = p.get('mode') === 'move' ? 'move' : 'add';
+        scannerToken = p.get('token') || ''; scannerMode = p.get('mode') === 'move' ? 'move' : 'add';
         document.body.classList.remove('mode-add', 'mode-move');
         document.body.classList.add(scannerMode === 'move' ? 'mode-move' : 'mode-add');
         authToken = authTokenVal();
@@ -662,6 +647,7 @@
     </script>
   </body>
 </html>
+
 
 
 
