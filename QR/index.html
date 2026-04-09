@@ -560,6 +560,12 @@
         status.textContent = '';
       }
 
+      function invalidateScannerIndexCache() {
+        try {
+          sessionStorage.removeItem(SCANNER_INDEX_CACHE_KEY);
+        } catch (e) {}
+      }
+
       document.getElementById('submitBtn').addEventListener('click', async () => {
         dismissSubmitStatus();
         const locType = document.querySelector('input[name="location"]:checked')?.value || '';
@@ -576,10 +582,14 @@
         try {
           const result = await apiPost('submitScannedItems', payload);
           if (result.success && (!result.failed || result.failed.length === 0)) {
+            invalidateScannerIndexCache();
             alert('완료: ' + result.message); returnToMenu();
           } else {
             if (result && result.message && isAuthSessionError(result.message)) {
               alert('세션이 만료되었습니다. 다시 로그인해주세요.'); returnToMenu(); return;
+            }
+            if (result && result.success) {
+              invalidateScannerIndexCache();
             }
             if (scannerMode === 'move' && Array.isArray(result.moved) && result.moved.length) {
               const movedSet = new Set(result.moved.map(serial => normalizeSerial(serial)));
