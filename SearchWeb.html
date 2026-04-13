@@ -762,7 +762,9 @@
             document.getElementById('lastActionBy').textContent = sorted[0].changedBy || 'Unknown';
             let html = '';
             sorted.forEach((m, idx) => {
-              const noteText = String(m && m.notes ? m.notes : '').trim();
+              const noteText = String(
+                (m && (m.notes ?? m.note ?? m.memo ?? m['메모'])) || ''
+              ).trim();
               const hasNote = noteText.length > 0;
               const noteId = `history-note-${idx}`;
               html += `
