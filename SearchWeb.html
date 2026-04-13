@@ -361,6 +361,11 @@
       .history-date { font-size: 13px; color: #2563eb; font-weight: 500; }
       .history-details { display: flex; gap: 15px; font-size: 12px; color: #64748b; }
       .history-location, .history-person { display: flex; align-items: center; gap: 4px; }
+      .history-note-action { margin-top: 8px; display: flex; justify-content: flex-end; }
+      .history-note-btn { border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a; font-size: 12px; font-weight: 600; border-radius: 8px; padding: 5px 10px; cursor: pointer; }
+      .history-note-btn:hover { background: #eef2f7; }
+      .history-note-card { margin-top: 8px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; padding: 10px; font-size: 12px; color: #334155; white-space: pre-wrap; word-break: break-word; display: none; }
+      .history-note-card.show { display: block; }
       .no-history, .loading, .no-data { text-align: center; padding: 40px; color: #64748b; }
       .no-history { font-style: italic; background: white; border-radius: 12px; border: 2px dashed #e2e8f0; grid-column: 1 / -1; }
     </style>
@@ -568,6 +573,19 @@
           window.parent.postMessage({ type: 'inventory-nav-menu' }, '*');
         }
       }
+      function escapeHtml(value) {
+        return String(value == null ? '' : value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+      function toggleHistoryNote(noteId) {
+        var card = document.getElementById(noteId);
+        if (!card) return;
+        card.classList.toggle('show');
+      }
       
       
       function loadInitialData() {
@@ -743,7 +761,10 @@
             document.getElementById('lastUpdated').textContent = formatDateDisplaySafe(sorted[0].date);
             document.getElementById('lastActionBy').textContent = sorted[0].changedBy || 'Unknown';
             let html = '';
-            sorted.forEach(m => {
+            sorted.forEach((m, idx) => {
+              const noteText = String(m && m.notes ? m.notes : '').trim();
+              const hasNote = noteText.length > 0;
+              const noteId = `history-note-${idx}`;
               html += `
                 <div class="history-card">
                   <div class="history-row">
@@ -754,6 +775,8 @@
                     <span class="history-location">📍 ${m.location || ''}</span>
                     <span class="history-person">👤 ${m.changedBy || 'Unknown'}</span>
                   </div>
+                  ${hasNote ? `<div class="history-note-action"><button type="button" class="history-note-btn" onclick="toggleHistoryNote('${noteId}')">메모</button></div>` : ''}
+                  ${hasNote ? `<div id="${noteId}" class="history-note-card">${escapeHtml(noteText)}</div>` : ''}
                 </div>`;
             });
             grid.innerHTML = html;

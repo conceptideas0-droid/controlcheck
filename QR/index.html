@@ -163,6 +163,7 @@
       const FETCH_TIMEOUT_MS = 30000;
       const SCANNER_INDEX_CACHE_KEY = 'inventoryScannerIndexCacheV1';
       const SCANNER_INDEX_CACHE_TTL_MS = 30000;
+      const QR_DRAFT_KEY = 'inventoryQrDraftV1';
       let scannerToken = '', authToken = '', scannerMode = 'add', scannedItems = [], existingSerials = new Set();
       let moveKnownSerials = new Set(), knownItemMeta = new Map();
       let inventoryIndexReady = false;
@@ -192,11 +193,74 @@
       }
       function isAuthSessionError(msg) {
         const lower = String(msg || '').toLowerCase();
-        return lower.includes('invalid or expired auth token') || lower.includes('authtoke');
+        return lower.includes('invalid or expired auth token') || lower.includes('authtoke') || lower.includes('person name is required');
       }
       function returnToMenu() {
         if (window.parent && window.parent !== window) {
           window.parent.postMessage({ type: 'inventory-nav-menu' }, '*');
+        }
+      }
+      function requestReLogin() {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'inventory-auth-required' }, '*');
+        }
+      }
+      function collectQrDraft() {
+        const locType = document.querySelector('input[name="location"]:checked')?.value || '';
+        const moveKey = document.querySelector('input[name="movementStatus"]:checked')?.value || 'Out';
+        return {
+          mode: scannerMode,
+          scannedItems: scannedItems || [],
+          dateInput: document.getElementById('dateInput').value || '',
+          locationType: locType,
+          customLocation: document.getElementById('customLocation').value || '',
+          notes: document.getElementById('notes').value || '',
+          movementStatus: moveKey,
+          inReview: !document.getElementById('reviewSection').classList.contains('hidden')
+        };
+      }
+      function saveQrDraft() {
+        try {
+          sessionStorage.setItem(QR_DRAFT_KEY, JSON.stringify(collectQrDraft()));
+        } catch (e) {}
+      }
+      function clearQrDraft() {
+        try {
+          sessionStorage.removeItem(QR_DRAFT_KEY);
+        } catch (e) {}
+      }
+      function restoreQrDraft() {
+        let raw = '';
+        try { raw = sessionStorage.getItem(QR_DRAFT_KEY) || ''; } catch (e) {}
+        if (!raw) return;
+        let draft = null;
+        try { draft = JSON.parse(raw); } catch (e) { return; }
+        if (!draft || String(draft.mode || '') !== String(scannerMode || '')) return;
+        scannedItems = Array.isArray(draft.scannedItems) ? draft.scannedItems : [];
+        const dateInput = String(draft.dateInput || '');
+        if (dateInput) document.getElementById('dateInput').value = dateInput;
+        document.getElementById('notes').value = String(draft.notes || '');
+        if (scannerMode === 'move') {
+          const moveKey = String(draft.movementStatus || 'Out');
+          const movementRadio = document.querySelector(`input[name="movementStatus"][value="${moveKey}"]`);
+          if (movementRadio) movementRadio.checked = true;
+        }
+        updateLocationOptions();
+        const locType = String(draft.locationType || '');
+        if (locType) {
+          const locRadio = document.querySelector(`input[name="location"][value="${locType}"]`);
+          if (locRadio) locRadio.checked = true;
+        }
+        handleLocationToggle();
+        document.getElementById('customLocation').value = String(draft.customLocation || '');
+        syncScannedStats();
+        renderLivePreview();
+        renderReviewList();
+        if (draft.inReview) {
+          document.getElementById('scannerOverlay').classList.add('hidden');
+          document.getElementById('reviewSection').classList.remove('hidden');
+          document.getElementById('scanActiveControls').classList.add('hidden');
+          document.getElementById('scanEntryControls').classList.remove('hidden');
         }
       }
       function normalizeSerial(value) {
@@ -350,7 +414,7 @@
           setInventoryReadyState(false);
           if (isAuthSessionError(err && err.message)) {
             alert('세션이 만료되었습니다. 다시 로그인해주세요.');
-            returnToMenu();
+            requestReLogin();
             return false;
           }
           console.error('Failed to load inventory index', err);
@@ -410,6 +474,7 @@
         document.getElementById('totalScanned').textContent = scannedItems.length;
         document.getElementById('lastSerial').textContent = full;
         renderLivePreview();
+        saveQrDraft();
         if (scannerMode === 'add' && inInventory) {
           toastMessage('Duplicate: already registered', 'error');
         } else if (scannerMode === 'move' && !knownForMove) {
@@ -520,6 +585,7 @@
         document.getElementById('scannerOverlay').classList.add('hidden');
         document.getElementById('reviewSection').classList.remove('hidden');
         updateLocationOptions(); renderReviewList();
+        saveQrDraft();
       });
 
       function renderReviewList() {
@@ -540,6 +606,7 @@
         syncScannedStats();
         renderLivePreview();
         renderReviewList();
+        saveQrDraft();
       }
 
       function syncScannedStats() {
@@ -570,10 +637,11 @@
           const result = await apiPost('submitScannedItems', payload);
           if (result.success && (!result.failed || result.failed.length === 0)) {
             invalidateScannerIndexCache();
+            clearQrDraft();
             alert('완료: ' + result.message); returnToMenu();
           } else {
             if (result && result.message && isAuthSessionError(result.message)) {
-              alert('세션이 만료되었습니다. 다시 로그인해주세요.'); returnToMenu(); return;
+              alert('세션이 만료되었습니다. 다시 로그인해주세요.'); requestReLogin(); return;
             }
             if (scannerMode === 'move' && Array.isArray(result.moved) && result.moved.length) {
               invalidateScannerIndexCache();
@@ -593,11 +661,12 @@
             status.innerHTML = html + '<div style="margin-top:10px;"><button type="button" id="submitStatusOkBtn" class="primary-btn" style="padding:8px 16px;">OK</button></div>';
             const okBtn = document.getElementById('submitStatusOkBtn');
             if (okBtn) okBtn.addEventListener('click', dismissSubmitStatus, { once: true });
+            saveQrDraft();
           }
         } catch (e) {
           if (isAuthSessionError(e && e.message)) {
             alert('세션이 만료되었습니다. 다시 로그인해주세요.');
-            returnToMenu();
+            requestReLogin();
           } else {
             alert('Request failed: ' + e.message);
           }
@@ -611,6 +680,7 @@
         document.getElementById('scannerOverlay').classList.remove('hidden');
         document.getElementById('scanActiveControls').classList.add('hidden');
         document.getElementById('scanEntryControls').classList.remove('hidden');
+        saveQrDraft();
       });
 
       window.addEventListener('DOMContentLoaded', () => {
@@ -619,13 +689,26 @@
         document.body.classList.remove('mode-add', 'mode-move');
         document.body.classList.add(scannerMode === 'move' ? 'mode-move' : 'mode-add');
         authToken = authTokenVal();
-        if (!authToken) { alert('세션이 만료되었습니다. 다시 로그인해주세요.'); returnToMenu(); return; }
+        if (!authToken) { alert('세션이 만료되었습니다. 다시 로그인해주세요.'); requestReLogin(); return; }
         document.getElementById('cardTitle').textContent = scannerMode === 'move' ? 'QR 이동 Move' : 'QR 등록 Add';
         document.getElementById('cardSubtitle').textContent = scannerMode === 'move' ? '스캔로 이동합니다. Scan to move.' : '스캔로 등록합니다. Scan to add.';
         document.getElementById('submitBtn').textContent = scannerMode === 'move' ? '이동하기 Move Items' : '등록 Add';
         document.getElementById('dateInput').value = new Date(Date.now() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 10);
         document.getElementById('movementStatusGroup').classList.toggle('hidden', scannerMode !== 'move');
         document.getElementById('scannerCard').classList.remove('hidden');
+        restoreQrDraft();
+        document.getElementById('dateInput').addEventListener('input', saveQrDraft);
+        document.getElementById('customLocation').addEventListener('input', saveQrDraft);
+        document.getElementById('notes').addEventListener('input', saveQrDraft);
+        document.getElementById('locOptionsContainer').addEventListener('change', function(e) {
+          if (e && e.target && e.target.name === 'location') saveQrDraft();
+        });
+        document.querySelectorAll('input[name="movementStatus"]').forEach(function(radio) {
+          radio.addEventListener('change', function() {
+            updateLocationOptions();
+            saveQrDraft();
+          });
+        });
         Promise.all([
           validateScannerTokenWithRetry(),
           loadExistingSerials()
@@ -638,10 +721,11 @@
         }).catch(err => {
           if (isAuthSessionError(err && err.message)) {
             alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+            requestReLogin();
           } else {
             alert('Scanner token validation failed: ' + (err && err.message ? err.message : 'Unknown error'));
+            returnToMenu();
           }
-          returnToMenu();
         });
       });
     </script>

@@ -102,6 +102,7 @@
     <script>
       const BACKEND_API_BASE = 'https://inventory-proxy.conceptideas0.workers.dev/api';
       const FETCH_TIMEOUT_MS = 30000;
+      const MOVE_DRAFT_KEY = 'inventoryMoveItemsDraftV1';
       var currentItems = [], selectedItems = [], selectedMove = '';
       var allItemsCache = [];
       var allItemsLoaded = false;
@@ -137,15 +138,23 @@
       function isAuthRequiredMessage(msg) {
         return String(msg || '').toLowerCase().indexOf('authtoke') > -1;
       }
+      function isActorMissingMessage(msg) {
+        return String(msg || '').toLowerCase().indexOf('person name is required') > -1;
+      }
+      function requestReLogin() {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'inventory-auth-required' }, '*');
+        }
+      }
       function handleAuthExpiryFromError(err) {
         var msg = err && err.message;
-        if (!isAuthExpiredMessage(msg) && !isAuthRequiredMessage(msg)) return false;
+        if (!isAuthExpiredMessage(msg) && !isAuthRequiredMessage(msg) && !isActorMissingMessage(msg)) return false;
         try {
           sessionStorage.removeItem('inventoryLoginToken');
           localStorage.removeItem('inventoryLoggedInUser');
         } catch (e) {}
         alert('세션이 만료되었습니다. Session expired. 다시 로그인해주세요. Please log in again.');
-        goToMenu();
+        requestReLogin();
         return true;
       }
       function localDateInputValue(date) {
@@ -174,6 +183,53 @@
         var s = document.querySelector('input[name="location"]:checked');
         document.getElementById('customLocationGroup').style.display = (s && s.value === '기타 Other') ? 'block' : 'none';
       }
+      function collectMoveDraft() {
+        var checked = document.querySelector('input[name="location"]:checked');
+        return {
+          selectedItems: selectedItems || [],
+          selectedMove: selectedMove || '',
+          movementDate: document.getElementById('movementDate').value || '',
+          useCurrentDate: !!document.getElementById('useCurrentDate').checked,
+          locationType: checked ? String(checked.value || '') : '',
+          customLocation: document.getElementById('customLocation').value || '',
+          notes: document.getElementById('notes').value || '',
+          searchInput: document.getElementById('searchInput').value || ''
+        };
+      }
+      function saveMoveDraft() {
+        try {
+          sessionStorage.setItem(MOVE_DRAFT_KEY, JSON.stringify(collectMoveDraft()));
+        } catch (e) {}
+      }
+      function clearMoveDraft() {
+        try {
+          sessionStorage.removeItem(MOVE_DRAFT_KEY);
+        } catch (e) {}
+      }
+      function restoreMoveDraft() {
+        var raw = '';
+        try { raw = sessionStorage.getItem(MOVE_DRAFT_KEY) || ''; } catch (e) {}
+        if (!raw) return;
+        var draft = null;
+        try { draft = JSON.parse(raw); } catch (e) { return; }
+        if (!draft || typeof draft !== 'object') return;
+        if (Array.isArray(draft.selectedItems)) selectedItems = draft.selectedItems;
+        if (draft.selectedMove) selectMovement(String(draft.selectedMove));
+        var movementDate = String(draft.movementDate || '');
+        if (movementDate) document.getElementById('movementDate').value = movementDate;
+        document.getElementById('useCurrentDate').checked = !!draft.useCurrentDate;
+        toggleDate();
+        var locationType = String(draft.locationType || '');
+        if (locationType) {
+          var locRadio = document.querySelector(`input[name="location"][value="${locationType}"]`);
+          if (locRadio) locRadio.checked = true;
+        }
+        toggleLocation();
+        document.getElementById('customLocation').value = String(draft.customLocation || '');
+        document.getElementById('notes').value = String(draft.notes || '');
+        document.getElementById('searchInput').value = String(draft.searchInput || '');
+        document.getElementById('moveForm').style.display = selectedItems.length ? 'block' : 'none';
+      }
       function selectMovement(key) {
         selectedMove = key;
         document.querySelectorAll('.movement-btn').forEach(b => b.classList.remove('selected'));
@@ -184,6 +240,7 @@
         html += '<label><input type="radio" name="location" value="기타 Other" onchange="toggleLocation()"><span>기타 Other</span></label>';
         document.getElementById('locContainer').innerHTML = html;
         toggleLocation();
+        saveMoveDraft();
       }
       function searchItems() {
         var t = document.getElementById('searchInput').value.trim();
@@ -249,6 +306,7 @@
         }
         document.getElementById('moveForm').style.display = selectedItems.length ? 'block' : 'none';
         if (selectedItems.length && !selectedMove) selectMovement('Out');
+        saveMoveDraft();
       }
       function moveSelectedItems() {
         var locType = document.querySelector('input[name="location"]:checked')?.value;
@@ -279,6 +337,7 @@
             status.style.display = 'block';
             status.className = 'success';
             status.innerHTML = `${result.message}<div class="status-actions"><button class="ok-btn" onclick="dismissStatus()">OK</button></div>`;
+            clearMoveDraft();
           } else {
             const status = document.getElementById('status');
             status.style.display = 'block'; status.className = 'error';
@@ -288,6 +347,7 @@
               html += `<div class="preview-row" style="text-align:left; background:white; margin-top:5px; border-radius:8px; border:1px solid #e2e8f0; padding:10px;"><div><strong>${p.serial || p}</strong><div style="font-size:11px">${p.type || ''} | ${p.model || ''}</div><div style="font-size:11px; color:#334155;">📍 ${p.location || '-'}</div><div style="font-size:10px; color:red;">${p.message || 'Error'}</div></div></div>`;
             });
             status.innerHTML = html + '<div class="status-actions"><button class="ok-btn" onclick="dismissStatus()">OK</button></div>';
+            saveMoveDraft();
           }
           btn.disabled = false;
         }).catch(err => { if (!handleAuthExpiryFromError(err)) { alert('Error: ' + err.message); } btn.disabled = false; });
@@ -300,6 +360,15 @@
       window.onload = function() {
         if (!authToken()) { goToMenu(); return; }
         document.getElementById('movementDate').value = localDateInputValue(new Date()); toggleDate();
+        restoreMoveDraft();
+        document.getElementById('searchInput').addEventListener('input', saveMoveDraft);
+        document.getElementById('movementDate').addEventListener('input', saveMoveDraft);
+        document.getElementById('useCurrentDate').addEventListener('change', function() { toggleDate(); saveMoveDraft(); });
+        document.getElementById('customLocation').addEventListener('input', saveMoveDraft);
+        document.getElementById('notes').addEventListener('input', saveMoveDraft);
+        document.getElementById('locContainer').addEventListener('change', function(e) {
+          if (e && e.target && e.target.name === 'location') saveMoveDraft();
+        });
         prefetchAllItems();
       };
     </script>

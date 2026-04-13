@@ -1449,6 +1449,11 @@
           }
           if (event.data.type === 'inventory-nav-menu') {
             goBack();
+            return;
+          }
+          if (event.data.type === 'inventory-auth-required') {
+            goBack();
+            resetLogin();
           }
         });
         pageFrame.addEventListener('error', () => {

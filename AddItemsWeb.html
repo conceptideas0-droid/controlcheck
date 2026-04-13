@@ -67,7 +67,9 @@
     <script>
       const BACKEND_API_BASE = 'https://inventory-proxy.conceptideas0.workers.dev/api';
       const FETCH_TIMEOUT_MS = 30000;
+      const ADD_DRAFT_KEY = 'inventoryAddItemsDraftV1';
       var currentNumbers = [];
+      var addDraftRestored = false;
       function authToken() { return sessionStorage.getItem('inventoryLoginToken') || ''; }
       function parseJsonResponse(response) {
         return response.text().then(function(raw) {
@@ -100,15 +102,23 @@
       function isAuthRequiredMessage(msg) {
         return String(msg || '').toLowerCase().indexOf('authtoke') > -1;
       }
+      function isActorMissingMessage(msg) {
+        return String(msg || '').toLowerCase().indexOf('person name is required') > -1;
+      }
+      function requestReLogin() {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'inventory-auth-required' }, '*');
+        }
+      }
       function handleAuthExpiryFromError(err) {
         var msg = err && err.message;
-        if (!isAuthExpiredMessage(msg) && !isAuthRequiredMessage(msg)) return false;
+        if (!isAuthExpiredMessage(msg) && !isAuthRequiredMessage(msg) && !isActorMissingMessage(msg)) return false;
         try {
           sessionStorage.removeItem('inventoryLoginToken');
           localStorage.removeItem('inventoryLoggedInUser');
         } catch (e) {}
         alert('세션이 만료되었습니다. Session expired. 다시 로그인해주세요. Please log in again.');
-        goToMenu();
+        requestReLogin();
         return true;
       }
       function callApiGet(a, p) {
@@ -134,6 +144,72 @@
           window.parent.postMessage({ type: 'inventory-nav-menu' }, '*');
         }
       }
+      function getSelectedLocationType() {
+        var selected = document.querySelector('input[name="location"]:checked');
+        return selected ? selected.value : 'Office';
+      }
+      function collectDraft() {
+        return {
+          manufNumber: document.getElementById('manufNumber').value || '',
+          serialCode: document.getElementById('serialCode').value || '',
+          numbersInput: document.getElementById('numbersInput').value || '',
+          dateAdded: document.getElementById('dateAdded').value || '',
+          locationType: getSelectedLocationType(),
+          customLocation: document.getElementById('customLocation').value || '',
+          itemType: document.getElementById('itemType').value || '',
+          itemModel: document.getElementById('itemModel').value || '',
+          notes: document.getElementById('notes').value || ''
+        };
+      }
+      function saveDraft() {
+        try {
+          sessionStorage.setItem(ADD_DRAFT_KEY, JSON.stringify(collectDraft()));
+        } catch (e) {}
+      }
+      function clearDraft() {
+        try {
+          sessionStorage.removeItem(ADD_DRAFT_KEY);
+        } catch (e) {}
+      }
+      function loadModels(preferredModel) {
+        var type = document.getElementById('itemType').value; if (!type) return;
+        callApiGet('getModelsByType', { type: type }).then(res => {
+          var s = document.getElementById('itemModel'); s.innerHTML = '<option value="">Select model...</option>';
+          (res || []).forEach(n => s.innerHTML += `<option value="${n}">${n}</option>`);
+          if (preferredModel) s.value = preferredModel;
+          saveDraft();
+        }).catch(err => {
+          if (!handleAuthExpiryFromError(err)) {
+            alert('Failed to load models: ' + err.message);
+          }
+        });
+      }
+      function restoreDraft() {
+        var raw = '';
+        try { raw = sessionStorage.getItem(ADD_DRAFT_KEY) || ''; } catch (e) {}
+        if (!raw) return;
+        var draft = null;
+        try { draft = JSON.parse(raw); } catch (e) { return; }
+        if (!draft || typeof draft !== 'object') return;
+        document.getElementById('manufNumber').value = String(draft.manufNumber || '');
+        document.getElementById('serialCode').value = String(draft.serialCode || '');
+        document.getElementById('numbersInput').value = String(draft.numbersInput || '');
+        document.getElementById('dateAdded').value = String(draft.dateAdded || document.getElementById('dateAdded').value || '');
+        var locationType = String(draft.locationType || 'Office');
+        var targetRadio = document.querySelector(`input[name="location"][value="${locationType}"]`) || document.querySelector('input[name="location"][value="Office"]');
+        if (targetRadio) targetRadio.checked = true;
+        toggleLocation();
+        document.getElementById('customLocation').value = String(draft.customLocation || '');
+        var itemType = String(draft.itemType || '');
+        if (itemType) {
+          document.getElementById('itemType').value = itemType;
+          loadModels(String(draft.itemModel || ''));
+        } else {
+          document.getElementById('itemModel').innerHTML = '<option value="">Select type first</option>';
+        }
+        document.getElementById('notes').value = String(draft.notes || '');
+        previewNumbers();
+      }
       function localDateInputValue(date) {
         var d = date || new Date();
         var y = d.getFullYear();
@@ -149,18 +225,11 @@
           }
           var s = document.getElementById('itemType'); s.innerHTML = '<option value="">Select type...</option>';
           (res || []).forEach(n => s.innerHTML += `<option value="${n}">${n}</option>`);
-        }).catch(err => { if (!handleAuthExpiryFromError(err)) { console.error('Token validation error', err); } });
-      }
-      function loadModels() {
-        var type = document.getElementById('itemType').value; if (!type) return;
-        callApiGet('getModelsByType', { type: type }).then(res => {
-          var s = document.getElementById('itemModel'); s.innerHTML = '<option value="">Select model...</option>';
-          (res || []).forEach(n => s.innerHTML += `<option value="${n}">${n}</option>`);
-        }).catch(err => {
-          if (!handleAuthExpiryFromError(err)) {
-            alert('Failed to load models: ' + err.message);
+          if (!addDraftRestored) {
+            restoreDraft();
+            addDraftRestored = true;
           }
-        });
+        }).catch(err => { if (!handleAuthExpiryFromError(err)) { console.error('Token validation error', err); } });
       }
       function parseNumbers(input) {
         if (!input.trim()) return [];
@@ -206,6 +275,7 @@
         var locType = document.querySelector('input[name="location"]:checked').value;
         var customLoc = document.getElementById('customLocation').value.trim();
         if (locType === 'Other' && !customLoc) return alert('Please enter location.');
+        previewNumbers();
         var formData = {
           manufNumber: document.getElementById('manufNumber').value.toUpperCase().trim(),
           serialCode: document.getElementById('serialCode').value.toUpperCase().trim(),
@@ -223,6 +293,8 @@
             ['manufNumber', 'serialCode', 'numbersInput', 'notes', 'customLocation', 'itemType'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('itemModel').innerHTML = '<option value="">Select type first</option>';
             document.getElementById('previewArea').style.display = 'none'; setDefaultDate();
+            currentNumbers = [];
+            clearDraft();
           }
           btn.disabled = false;
         }).catch(err => { if (!handleAuthExpiryFromError(err)) { alert('Error: ' + err.message); } btn.disabled = false; });
@@ -230,7 +302,12 @@
       window.onload = function() {
         if (!authToken()) { goToMenu(); return; }
         setDefaultDate(); loadDropdowns(); toggleLocation();
-        ['manufNumber', 'serialCode', 'numbersInput'].forEach(id => document.getElementById(id).addEventListener('input', previewNumbers));
+        ['manufNumber', 'serialCode', 'numbersInput'].forEach(id => document.getElementById(id).addEventListener('input', function() { previewNumbers(); saveDraft(); }));
+        ['dateAdded', 'customLocation', 'itemModel', 'notes'].forEach(id => document.getElementById(id).addEventListener('input', saveDraft));
+        document.getElementById('itemType').addEventListener('change', function() { loadModels(); saveDraft(); });
+        document.querySelectorAll('input[name="location"]').forEach(function(radio) {
+          radio.addEventListener('change', function() { toggleLocation(); saveDraft(); });
+        });
       };
     </script>
   </body>
