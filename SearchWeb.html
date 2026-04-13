@@ -488,6 +488,12 @@
         if (!dateString) return 'Unknown';
         try {
           const raw = String(dateString).trim();
+          if (/^\d{4}-\d{2}-\d{2}T/.test(raw)) {
+            return raw.slice(0, 10);
+          }
+          if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+            return raw;
+          }
           let d = null;
           const numericRaw = raw.replace(/,/g, '');
           const numericLike = /^[-+]?\d+(\.\d+)?([eE][-+]?\d+)?$/.test(numericRaw);
@@ -762,9 +768,14 @@
             document.getElementById('lastActionBy').textContent = sorted[0].changedBy || 'Unknown';
             let html = '';
             sorted.forEach((m, idx) => {
-              const noteText = String(
-                (m && (m.notes ?? m.note ?? m.memo ?? m['메모'])) || ''
-              ).trim();
+              const noteRaw = (m && (
+                m.notes ||
+                m.note ||
+                m.memo ||
+                m['메모'] ||
+                (m.details && (m.details.notes || m.details.note || m.details.memo))
+              )) || '';
+              const noteText = String(noteRaw).trim();
               const hasNote = noteText.length > 0;
               const noteId = `history-note-${idx}`;
               html += `
