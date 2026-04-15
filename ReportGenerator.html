@@ -363,14 +363,26 @@
       }
      
       function loadInitialData() {
-        const currentYear = new Date().getFullYear();
         const yearSelect = document.getElementById('yearSelect');
-        for (let year = currentYear; year >= currentYear - 2; year--) {
-          const option = document.createElement('option');
-          option.value = year;
-          option.textContent = `${year}년`;
-          yearSelect.appendChild(option);
-        }
+        yearSelect.innerHTML = '<option value="All">모두 All</option>';
+        callApiGet('getTransactionLogs').then(logs => {
+          const years = new Set();
+          expectArray(logs).forEach(row => {
+            const raw = String((row && row.date) || '').trim();
+            const d = new Date(raw);
+            if (!isNaN(d.getTime())) years.add(d.getFullYear());
+            else {
+              const m = raw.match(/(19|20)\d{2}/);
+              if (m) years.add(Number(m[0]));
+            }
+          });
+          Array.from(years).sort((a, b) => b - a).forEach(year => {
+            const option = document.createElement('option');
+            option.value = String(year);
+            option.textContent = `${year}년`;
+            yearSelect.appendChild(option);
+          });
+        }).catch(() => null);
        
         callApiGet('getItemTypes').then(res => { types = expectArray(res); updateTypeFilter(); })
           .catch(err => { if (!handleAuthExpiryIfNeeded(err)) showStatus('Failed to load types', false); });
