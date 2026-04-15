@@ -400,24 +400,42 @@
       function updateModelFilter(selectedType) {
         const safeType = selectedType || document.getElementById('typeFilter').value || 'All';
         const modelSelect = document.getElementById('modelFilter');
+        const normalize = (v) => String(v == null ? '' : v).trim();
         
         if (safeType === 'All') {
           modelSelect.innerHTML = '<option value="All">모든 모델 All Models</option>';
           if (allItems.length > 0) {
-            const ms = [...new Set(allItems.map(i => i.model).filter(Boolean))].sort();
+            const ms = [...new Set(allItems.map(i => normalize(i && i.model)).filter(Boolean))].sort();
             ms.forEach(m => { modelSelect.innerHTML += `<option value="${m}">${m}</option>`; });
           }
+          modelSelect.value = 'All';
           return;
         }
 
-        modelSelect.innerHTML = '<option value="All">로딩 중 Loading...</option>';
+        modelSelect.innerHTML = '<option value="All">모든 모델 All Models</option>';
+        const localModels = [...new Set(
+          allItems
+            .filter(i => normalize(i && i.type) === normalize(safeType))
+            .map(i => normalize(i && i.model))
+            .filter(Boolean)
+        )].sort();
+        if (localModels.length > 0) {
+          localModels.forEach(m => { modelSelect.innerHTML += `<option value="${m}">${m}</option>`; });
+          modelSelect.value = 'All';
+          return;
+        }
+
         callApiGet('getModelsByType', { type: safeType })
           .then(ms => {
             ms = expectArray(ms);
             modelSelect.innerHTML = '<option value="All">모든 모델 All Models</option>';
             ms.forEach(m => { modelSelect.innerHTML += `<option value="${m}">${m}</option>`; });
+            modelSelect.value = 'All';
           })
-          .catch(() => modelSelect.innerHTML = '<option value="All">모든 모델 All Models</option>');
+          .catch(() => {
+            modelSelect.innerHTML = '<option value="All">모든 모델 All Models</option>';
+            modelSelect.value = 'All';
+          });
       }
      
       function showStatus(message, isSuccess) {
