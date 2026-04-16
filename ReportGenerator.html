@@ -280,6 +280,14 @@
           <option value="Problem">불량 Problem</option>
         </select>
       </div>
+
+      <div class="form-group">
+        <label>정렬 방식 Sort by</label>
+        <select id="sortByFilter">
+          <option value="Date">날짜순 Date</option>
+          <option value="Alphabetical">가나다순 Alphabetical</option>
+        </select>
+      </div>
      
       <div class="button-group">
         <div class="button-row">
@@ -462,6 +470,7 @@
         const type = document.getElementById('typeFilter').value;
         const model = document.getElementById('modelFilter').value;
         const status = document.getElementById('statusFilter').value;
+        const sortBy = document.getElementById('sortByFilter').value;
         
         if (!yearValue || !monthValue) { showStatus('년도와 월을 선택해주세요', false); return; }
         
@@ -470,13 +479,13 @@
         btn.disabled = true;
         btnText.innerHTML = '<span class="loading"></span> 생성 중...';
         
-        callApiPost('generateMonthlyReport', { params: { year: yearValue === 'All' ? null : parseInt(yearValue, 10), month: monthValue === 'All' ? null : parseInt(monthValue, 10), type: type, model: model, status: status } })
+        callApiPost('generateMonthlyReport', { params: { year: yearValue === 'All' ? null : parseInt(yearValue, 10), month: monthValue === 'All' ? null : parseInt(monthValue, 10), type: type, model: model, status: status, sortBy: sortBy } })
           .then(result => {
             btn.disabled = false;
             btnText.innerHTML = '📊 보고서 생성 Generate Report';
             if (result && result.success) {
               showStatus(`✅ 보고서 생성 완료: ${result.count}개 항목`, true);
-              document.getElementById('previewText').innerHTML = `📋 📊 총 ${result.count}개 내역<br>종류: ${type}<br>모델: ${model}<br>상태: ${status}`;
+              document.getElementById('previewText').innerHTML = `📋 📊 총 ${result.count}개 내역<br>종류: ${type}<br>모델: ${model}<br>상태: ${status}<br>정렬: ${sortBy}`;
               document.getElementById('preview').style.display = 'block';
               document.getElementById('printBtn').disabled = false;
               document.getElementById('printHelper').style.display = 'block';
@@ -498,6 +507,7 @@
         document.getElementById('typeFilter').value = 'All';
         document.getElementById('modelFilter').value = 'All';
         document.getElementById('statusFilter').value = 'All';
+        document.getElementById('sortByFilter').value = 'Date';
         document.getElementById('preview').style.display = 'none';
         document.getElementById('printBtn').disabled = true;
       }
