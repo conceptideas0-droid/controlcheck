@@ -464,8 +464,14 @@
         const itemType = String((s[3] || meta.type || '')).trim();
         const itemModel = String((s[4] || meta.model || '')).trim();
         const itemLocation = String((s[5] || meta.location || '')).trim();
+        const manufNumber = String((s[0] || '')).trim();
+        const serialCode = String((s[1] || '')).trim();
+        const serialNumber = String((s[2] || '')).trim();
         scannedItems.push({
           fullSerial: full,
+          manufNumber: manufNumber,
+          serialCode: serialCode,
+          serialNumber: serialNumber,
           itemType: itemType,
           itemModel: itemModel,
           itemLocation: itemLocation,

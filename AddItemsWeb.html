@@ -279,7 +279,7 @@
         var formData = {
           manufNumber: document.getElementById('manufNumber').value.toUpperCase().trim(),
           serialCode: document.getElementById('serialCode').value.toUpperCase().trim(),
-          numbers: currentNumbers, dateAdded: document.getElementById('dateAdded').value,
+          numbers: (currentNumbers || []).map(function(v) { return String(v == null ? '' : v).trim(); }).filter(Boolean), dateAdded: document.getElementById('dateAdded').value,
           personName: localStorage.getItem('inventoryLoggedInUser'),
           locationType: locType, customLocation: customLoc,
           itemType: document.getElementById('itemType').value, itemModel: document.getElementById('itemModel').value,
