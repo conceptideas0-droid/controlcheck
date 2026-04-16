@@ -279,10 +279,13 @@
           allItemsLoaded = true;
         }).catch(function() {});
       }
+      function compareSerialNatural(left, right) {
+        var a = String((left && left.fullSerial) || '').trim();
+        var b = String((right && right.fullSerial) || '').trim();
+        return a.localeCompare(b, 'en', { numeric: true, sensitivity: 'base' });
+      }
       function displayItems(items, id) {
-        const sortedItems = [...items].sort((a, b) =>
-          String((a && a.fullSerial) || '').localeCompare(String((b && b.fullSerial) || ''), 'en', { sensitivity: 'base' })
-        );
+        const sortedItems = [...items].sort(compareSerialNatural);
         var c = document.getElementById(id); 
         c.innerHTML = sortedItems.length ? sortedItems.map(item => {
           const isSelected = selectedItems.some(sItem => sItem.fullSerial === item.fullSerial);

@@ -281,6 +281,14 @@
         if (loose && !list.includes(loose)) list.push(loose);
         return list.filter(Boolean);
       }
+      function compareSerialNaturalValue(a, b) {
+        return String(a || '').localeCompare(String(b || ''), 'en', { numeric: true, sensitivity: 'base' });
+      }
+      function getSortedScannedEntries() {
+        return scannedItems
+          .map((item, index) => ({ item: item, index: index }))
+          .sort((left, right) => compareSerialNaturalValue(left.item && left.item.fullSerial, right.item && right.item.fullSerial));
+      }
       function buildSerialFromItem(item) {
         const full = normalizeSerial(item && item.fullSerial);
         if (full) return full;
@@ -498,8 +506,9 @@
 
       function renderLivePreview() {
         const list = document.getElementById('livePreviewList'); list.innerHTML = '';
-        scannedItems.slice().reverse().forEach((item, idx) => {
-          const originalIndex = scannedItems.length - 1 - idx;
+        getSortedScannedEntries().forEach((entry) => {
+          const item = entry.item;
+          const originalIndex = entry.index;
           const tagText = scannerMode === 'add' ? (item.alreadyExists ? '이미 등록' : '') : (item.alreadyExists ? '' : '없음');
           const tagHtml = tagText ? `<span class="tag">${tagText}</span>` : '';
           const locationHtml = scannerMode === 'move'
@@ -601,7 +610,9 @@
       });
 
       function renderReviewList() {
-        document.getElementById('reviewList').innerHTML = scannedItems.map((item, idx) => {
+        document.getElementById('reviewList').innerHTML = getSortedScannedEntries().map((entry) => {
+          const item = entry.item;
+          const idx = entry.index;
           const tagText = scannerMode === 'add' ? (item.alreadyExists ? '이미 등록' : '') : (item.alreadyExists ? '' : '없음');
           const tagHtml = tagText ? `<span class="tag">${tagText}</span>` : '';
           const locationHtml = scannerMode === 'move'
