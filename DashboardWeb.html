@@ -274,24 +274,46 @@
         document.getElementById('problemItems').textContent = data.problemItems || 0;
        
         let modelHtml = '';
-        const models = data.modelCounts || {};
-        if (Object.keys(models).length === 0) {
-          modelHtml = '<div class="loading">No models found</div>';
-        } else {
-          Object.entries(models).forEach(([model, count]) => {
-            modelHtml += `<div class="list-item"><span>${model}</span><span class="badge" style="background:#e2e8f0">${count}</span></div>`;
+        const modelsByStatus = data.modelCountsByStatus || {};
+        if (Object.keys(modelsByStatus).length > 0) {
+          Object.entries(modelsByStatus).forEach(([model, stats]) => {
+            var inCount = Number((stats && stats.In) || 0);
+            var outCount = Number((stats && stats.Out) || 0);
+            var problemCount = Number((stats && stats.Problem) || 0);
+            var total = inCount + outCount + problemCount + Number((stats && stats.Unknown) || 0);
+            modelHtml += `<div class="list-item"><span>${model}</span><span><span class="badge badge-in">${inCount}</span> <span class="badge badge-out">${outCount}</span> <span class="badge badge-problem">${problemCount}</span> <span class="badge" style="background:#e2e8f0">${total}</span></span></div>`;
           });
+        } else {
+          const models = data.modelCounts || {};
+          if (Object.keys(models).length === 0) {
+            modelHtml = '<div class="loading">No models found</div>';
+          } else {
+            Object.entries(models).forEach(([model, count]) => {
+              modelHtml += `<div class="list-item"><span>${model}</span><span class="badge" style="background:#e2e8f0">${count}</span></div>`;
+            });
+          }
         }
         document.getElementById('modelStats').innerHTML = modelHtml;
        
         let locationHtml = '';
-        const locations = data.locationCounts || {};
-        if (Object.keys(locations).length === 0) {
-          locationHtml = '<div class="loading">No locations found</div>';
-        } else {
-          Object.entries(locations).forEach(([loc, count]) => {
-            locationHtml += `<div class="list-item"><span>${loc}</span><span class="badge" style="background:#e2e8f0">${count}</span></div>`;
+        const locationsByStatus = data.locationCountsByStatus || {};
+        if (Object.keys(locationsByStatus).length > 0) {
+          Object.entries(locationsByStatus).forEach(([loc, stats]) => {
+            var inCount = Number((stats && stats.In) || 0);
+            var outCount = Number((stats && stats.Out) || 0);
+            var problemCount = Number((stats && stats.Problem) || 0);
+            var total = inCount + outCount + problemCount + Number((stats && stats.Unknown) || 0);
+            locationHtml += `<div class="list-item"><span>${loc}</span><span><span class="badge badge-in">${inCount}</span> <span class="badge badge-out">${outCount}</span> <span class="badge badge-problem">${problemCount}</span> <span class="badge" style="background:#e2e8f0">${total}</span></span></div>`;
           });
+        } else {
+          const locations = data.locationCounts || {};
+          if (Object.keys(locations).length === 0) {
+            locationHtml = '<div class="loading">No locations found</div>';
+          } else {
+            Object.entries(locations).forEach(([loc, count]) => {
+              locationHtml += `<div class="list-item"><span>${loc}</span><span class="badge" style="background:#e2e8f0">${count}</span></div>`;
+            });
+          }
         }
         document.getElementById('locationStats').innerHTML = locationHtml;
        

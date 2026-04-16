@@ -234,9 +234,15 @@
         selectedMove = key;
         document.querySelectorAll('.movement-btn').forEach(b => b.classList.remove('selected'));
         document.getElementById(key === 'In' ? 'btnIn' : key === 'Out' ? 'btnOut' : 'btnProb').classList.add('selected');
-        var html = (key === 'In') 
-          ? '<label><input type="radio" name="location" value="Office" checked onchange="toggleLocation()"><span>서울 사무실 Seoul Office</span></label>'
-          : '<label><input type="radio" name="location" value="Suwon" checked onchange="toggleLocation()"><span>수원 사무실 Suwon Office</span></label>';
+        var html = '';
+        if (key === 'In') {
+          html = '<label><input type="radio" name="location" value="Office" checked onchange="toggleLocation()"><span>서울 사무실 Seoul Office</span></label>';
+        } else if (key === 'Out') {
+          html = '<label><input type="radio" name="location" value="Suwon" checked onchange="toggleLocation()"><span>수원 사무실 Suwon Office</span></label>';
+          html += '<label><input type="radio" name="location" value="Demo" onchange="toggleLocation()"><span>서울 사무실 데모 사용 Demo</span></label>';
+        } else {
+          html = '<label><input type="radio" name="location" value="Suwon" checked onchange="toggleLocation()"><span>수원 사무실 Suwon Office</span></label>';
+        }
         html += '<label><input type="radio" name="location" value="기타 Other" onchange="toggleLocation()"><span>기타 Other</span></label>';
         document.getElementById('locContainer').innerHTML = html;
         toggleLocation();
@@ -311,6 +317,7 @@
       function moveSelectedItems() {
         var locType = document.querySelector('input[name="location"]:checked')?.value;
         var customLoc = document.getElementById('customLocation').value.trim();
+        if (locType === 'Demo') customLoc = '서울 사무실 데모 사용 Demo';
         if (locType === '기타 Other' && !customLoc) return alert('Please enter location.');
         var btn = document.getElementById('moveBtn'); btn.disabled = true;
         var selectedDate = document.getElementById('useCurrentDate').checked ? localDateInputValue(new Date()) : document.getElementById('movementDate').value;
