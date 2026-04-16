@@ -54,7 +54,8 @@
       .status-tabs {
         display: flex;
         gap: 8px;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        justify-content: space-between;
         margin-bottom: 12px;
       }
       .status-tab {
@@ -66,6 +67,8 @@
         border-radius: 999px;
         padding: 6px 10px;
         cursor: pointer;
+        flex: 1 1 0;
+        text-align: center;
       }
       .status-tab.active[data-status="Total"] { background: #e2e8f0; color: #0f172a; border-color: #94a3b8; }
       .status-tab.active[data-status="In"] { background: #dcfce7; color: #166534; border-color: #86efac; }
@@ -80,9 +83,51 @@
       .section {
         background: linear-gradient(180deg, #ffffff, #f8fafc); border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0; box-shadow: 0 14px 24px -14px rgba(15,23,42,0.35);
       }
+      .section.status-total { border-color: #cbd5e1; background: linear-gradient(180deg, #ffffff, #f8fafc); }
+      .section.status-in { border-color: #86efac; background: linear-gradient(180deg, #f0fdf4, #ecfdf5); }
+      .section.status-out { border-color: #fca5a5; background: linear-gradient(180deg, #fff1f2, #fef2f2); }
+      .section.status-problem { border-color: #fde68a; background: linear-gradient(180deg, #fefce8, #fef9c3); }
       .section-title { font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 15px; }
       .list-item {
         display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e2e8f0;
+      }
+      .type-row-btn {
+        width: 100%;
+        border: none;
+        background: transparent;
+        padding: 0;
+        margin: 0;
+        text-align: left;
+        cursor: pointer;
+      }
+      .type-row-main {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+      .type-name {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .expand-icon {
+        color: #64748b;
+        font-size: 12px;
+        width: 12px;
+        text-align: center;
+      }
+      .sub-list {
+        margin: 8px 0 12px 20px;
+        border-left: 2px solid #e2e8f0;
+        padding-left: 10px;
+      }
+      .sub-list .list-item {
+        padding: 8px 0;
+      }
+      .sub-list .list-item span:first-child {
+        color: #334155;
+        font-size: 13px;
       }
       .list-item:last-child { border-bottom: none; }
       .badge {
@@ -116,39 +161,32 @@
    
       <button class="refresh-btn" onclick="loadDashboard()">🔄 새로고침 Refresh Dashboard</button>
 
-    <div id="summaryTabs" class="status-tabs"></div>
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-value" id="totalItems">-</div>
-        <div class="stat-label" id="summaryLabel1">품목 Items</div>
+        <div class="stat-label" id="summaryLabel1">총 품목 Total</div>
       </div>
       <div class="stat-card">
         <div class="stat-value" id="inStock">-</div>
-        <div class="stat-label" id="summaryLabel2">모델 Models</div>
+        <div class="stat-label" id="summaryLabel2">입고 In</div>
       </div>
       <div class="stat-card">
         <div class="stat-value" id="outStock">-</div>
-        <div class="stat-label" id="summaryLabel3">위치 Locations</div>
+        <div class="stat-label" id="summaryLabel3">출고 Out</div>
       </div>
       <div class="stat-card">
         <div class="stat-value" id="problemItems">-</div>
-        <div class="stat-label" id="summaryLabel4">종류 Types</div>
+        <div class="stat-label" id="summaryLabel4">불량 Problem</div>
       </div>
     </div>
    
-    <div class="section">
-      <div class="section-title">🏷️ 종류별 품목 Items by Type</div>
+    <div class="section status-total" id="itemsSection">
+      <div class="section-title">🏷️ 품목 Items</div>
       <div id="typeTabs" class="status-tabs"></div>
       <div id="typeStats" class="scrollable"></div>
     </div>
 
-    <div class="section">
-      <div class="section-title">📦 모델별 품목 Items by Model</div>
-      <div id="modelTabs" class="status-tabs"></div>
-      <div id="modelStats" class="scrollable"></div>
-    </div>
-
-    <div class="section">
+    <div class="section status-total" id="locationsSection">
       <div class="section-title">📍 위치별 품목 Items by Location</div>
       <div id="locationTabs" class="status-tabs"></div>
       <div id="locationStats" class="scrollable"></div>
@@ -168,11 +206,10 @@
         { key: 'Out', label: '출고 Out' },
         { key: 'Problem', label: '불량 Problem' }
       ]);
-      let summaryStatusTab = 'Total';
-      let modelStatusTab = 'Total';
       let typeStatusTab = 'Total';
       let locationStatusTab = 'Total';
       let latestDashboardData = null;
+      const expandedTypes = Object.create(null);
 
       function parseJsonResponse(response) {
         return response.text().then(function(raw) {
@@ -309,6 +346,28 @@
         return entries;
       }
 
+      function escapeHtml(value) {
+        return String(value || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function getSectionStatusClass(statusKey) {
+        var key = String(statusKey || 'Total').toLowerCase();
+        if (key !== 'in' && key !== 'out' && key !== 'problem') key = 'total';
+        return 'status-' + key;
+      }
+
+      function applySectionStatus(containerId, statusKey) {
+        var section = document.getElementById(containerId);
+        if (!section) return;
+        section.classList.remove('status-total', 'status-in', 'status-out', 'status-problem');
+        section.classList.add(getSectionStatusClass(statusKey));
+      }
+
       function renderCountList(containerId, mapByStatus, activeStatus, emptyText) {
         var container = document.getElementById(containerId);
         if (!container) return;
@@ -322,39 +381,72 @@
         }).join('');
       }
 
+      function renderTypeExpandableList(containerId, typeMapByStatus, modelsByTypeMapByStatus, activeStatus, emptyText) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        var rows = toSortedEntriesByStatus(typeMapByStatus, activeStatus);
+        if (!rows.length) {
+          container.innerHTML = `<div class="loading">${emptyText}</div>`;
+          return;
+        }
+        container.innerHTML = rows.map(function(row) {
+          var safeType = escapeHtml(row.name);
+          var encodedType = encodeURIComponent(String(row.name || ''));
+          var isExpanded = Boolean(expandedTypes[row.name]);
+          var icon = isExpanded ? '&#9660;' : '&#9658;';
+          var modelMap = (modelsByTypeMapByStatus && modelsByTypeMapByStatus[row.name]) ? modelsByTypeMapByStatus[row.name] : {};
+          var modelRows = isExpanded ? toSortedEntriesByStatus(modelMap, activeStatus) : [];
+          var subHtml = '';
+          if (isExpanded) {
+            if (!modelRows.length) subHtml = '<div class="sub-list"><div class="loading">No model stats</div></div>';
+            else {
+              subHtml = '<div class="sub-list">' + modelRows.map(function(modelRow) {
+                return `<div class="list-item"><span>${escapeHtml(modelRow.name)}</span><span class="badge" style="background:#e2e8f0">${modelRow.count}</span></div>`;
+              }).join('') + '</div>';
+            }
+          }
+          return `
+            <div>
+              <button type="button" class="type-row-btn list-item" data-type="${encodedType}">
+                <div class="type-row-main">
+                  <span class="type-name"><span class="expand-icon">${icon}</span><span>${safeType}</span></span>
+                  <span class="badge" style="background:#e2e8f0">${row.count}</span>
+                </div>
+              </button>
+              ${subHtml}
+            </div>
+          `;
+        }).join('');
+        Array.prototype.forEach.call(container.querySelectorAll('.type-row-btn'), function(btn) {
+          btn.addEventListener('click', function() {
+            var typeName = decodeURIComponent(btn.getAttribute('data-type') || '');
+            expandedTypes[typeName] = !expandedTypes[typeName];
+            renderTypeExpandableList(containerId, typeMapByStatus, modelsByTypeMapByStatus, activeStatus, emptyText);
+          });
+        });
+      }
+
       function setSummaryCards(data) {
         var d = data || {};
-        var status = summaryStatusTab;
-        var totalItems = status === 'Total'
-          ? Number(d.totalItems || 0)
-          : Number(status === 'In' ? d.inStock : status === 'Out' ? d.outStock : d.problemItems) || 0;
-        var modelRows = toSortedEntriesByStatus(d.modelCountsByStatus || {}, status);
-        var locationRows = toSortedEntriesByStatus(d.locationCountsByStatus || {}, status);
-        var typeRows = toSortedEntriesByStatus(d.typeCountsByStatus || {}, status);
-        document.getElementById('totalItems').textContent = totalItems;
-        document.getElementById('inStock').textContent = modelRows.length;
-        document.getElementById('outStock').textContent = locationRows.length;
-        document.getElementById('problemItems').textContent = typeRows.length;
+        document.getElementById('totalItems').textContent = Number(d.totalItems || 0);
+        document.getElementById('inStock').textContent = Number(d.inStock || 0);
+        document.getElementById('outStock').textContent = Number(d.outStock || 0);
+        document.getElementById('problemItems').textContent = Number(d.problemItems || 0);
       }
 
       function applyDashboardView() {
         if (!latestDashboardData) return;
         setSummaryCards(latestDashboardData);
-        renderCountList('modelStats', latestDashboardData.modelCountsByStatus || {}, modelStatusTab, 'No model stats');
-        renderCountList('typeStats', latestDashboardData.typeCountsByStatus || {}, typeStatusTab, 'No type stats');
+        renderTypeExpandableList(
+          'typeStats',
+          latestDashboardData.typeCountsByStatus || {},
+          latestDashboardData.modelsByTypeCountsByStatus || {},
+          typeStatusTab,
+          'No item stats'
+        );
         renderCountList('locationStats', latestDashboardData.locationCountsByStatus || {}, locationStatusTab, 'No location stats');
-      }
-
-      function onSummaryStatusTabClick(statusKey) {
-        summaryStatusTab = statusKey;
-        renderStatusTabs('summaryTabs', summaryStatusTab, 'onSummaryStatusTabClick');
-        applyDashboardView();
-      }
-
-      function onModelStatusTabClick(statusKey) {
-        modelStatusTab = statusKey;
-        renderStatusTabs('modelTabs', modelStatusTab, 'onModelStatusTabClick');
-        applyDashboardView();
+        applySectionStatus('itemsSection', typeStatusTab);
+        applySectionStatus('locationsSection', locationStatusTab);
       }
 
       function onTypeStatusTabClick(statusKey) {
@@ -370,7 +462,6 @@
       }
      
       function loadDashboard() {
-        document.getElementById('modelStats').innerHTML = '<div class="loading">Loading...</div>';
         document.getElementById('typeStats').innerHTML = '<div class="loading">Loading...</div>';
         document.getElementById('locationStats').innerHTML = '<div class="loading">Loading...</div>';
         document.getElementById('recentActivity').innerHTML = '<div class="loading">Loading...</div>';
@@ -389,7 +480,6 @@
               return;
             }
             var msg = `Error loading data: ${error.message || error}`;
-            document.getElementById('modelStats').innerHTML = `<div style="color:red">${msg}</div>`;
             document.getElementById('typeStats').innerHTML = `<div style="color:red">${msg}</div>`;
             document.getElementById('locationStats').innerHTML = `<div style="color:red">${msg}</div>`;
             document.getElementById('recentActivity').innerHTML = `<div style="color:red">${msg}</div>`;
@@ -398,8 +488,6 @@
      
       function updateDashboard(data) {
         latestDashboardData = data || {};
-        renderStatusTabs('summaryTabs', summaryStatusTab, 'onSummaryStatusTabClick');
-        renderStatusTabs('modelTabs', modelStatusTab, 'onModelStatusTabClick');
         renderStatusTabs('typeTabs', typeStatusTab, 'onTypeStatusTabClick');
         renderStatusTabs('locationTabs', locationStatusTab, 'onLocationStatusTabClick');
         applyDashboardView();
