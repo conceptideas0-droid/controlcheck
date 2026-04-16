@@ -51,6 +51,26 @@
       .stats-grid {
         display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;
       }
+      .status-tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+      .status-tab {
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        color: #334155;
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 6px 10px;
+        cursor: pointer;
+      }
+      .status-tab.active[data-status="Total"] { background: #e2e8f0; color: #0f172a; border-color: #94a3b8; }
+      .status-tab.active[data-status="In"] { background: #dcfce7; color: #166534; border-color: #86efac; }
+      .status-tab.active[data-status="Out"] { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+      .status-tab.active[data-status="Problem"] { background: #fef9c3; color: #854d0e; border-color: #fde68a; }
       .stat-card {
         background: linear-gradient(180deg, #ffffff, #f8fafc); border-radius: 16px; padding: 20px; text-align: center;
         box-shadow: 0 14px 24px -14px rgba(15,23,42,0.35); border: 1px solid #e2e8f0;
@@ -94,34 +114,43 @@
       <button class="back-btn" type="button" onclick="goToMenu()" aria-label="Main Menu">&#8592;</button>
     </div>
    
-    <button class="refresh-btn" onclick="loadDashboard()">🔄 새로고침 Refresh Dashboard</button>
-   
+      <button class="refresh-btn" onclick="loadDashboard()">🔄 새로고침 Refresh Dashboard</button>
+
+    <div id="summaryTabs" class="status-tabs"></div>
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-value" id="totalItems">-</div>
-        <div class="stat-label">총 품목 Total</div>
+        <div class="stat-label" id="summaryLabel1">품목 Items</div>
       </div>
       <div class="stat-card">
         <div class="stat-value" id="inStock">-</div>
-        <div class="stat-label">In</div>
+        <div class="stat-label" id="summaryLabel2">모델 Models</div>
       </div>
       <div class="stat-card">
         <div class="stat-value" id="outStock">-</div>
-        <div class="stat-label">Out</div>
+        <div class="stat-label" id="summaryLabel3">위치 Locations</div>
       </div>
       <div class="stat-card">
         <div class="stat-value" id="problemItems">-</div>
-        <div class="stat-label">Problem</div>
+        <div class="stat-label" id="summaryLabel4">종류 Types</div>
       </div>
     </div>
    
     <div class="section">
+      <div class="section-title">🏷️ 종류별 품목 Items by Type</div>
+      <div id="typeTabs" class="status-tabs"></div>
+      <div id="typeStats" class="scrollable"></div>
+    </div>
+
+    <div class="section">
       <div class="section-title">📦 모델별 품목 Items by Model</div>
+      <div id="modelTabs" class="status-tabs"></div>
       <div id="modelStats" class="scrollable"></div>
     </div>
 
     <div class="section">
       <div class="section-title">📍 위치별 품목 Items by Location</div>
+      <div id="locationTabs" class="status-tabs"></div>
       <div id="locationStats" class="scrollable"></div>
     </div>
    
@@ -133,6 +162,17 @@
     <script>
       const BACKEND_API_BASE = 'https://inventory-proxy.conceptideas0.workers.dev/api';
       const FETCH_TIMEOUT_MS = 30000;
+      const STATUS_TABS = Object.freeze([
+        { key: 'Total', label: '전체 Total' },
+        { key: 'In', label: '입고 In' },
+        { key: 'Out', label: '출고 Out' },
+        { key: 'Problem', label: '불량 Problem' }
+      ]);
+      let summaryStatusTab = 'Total';
+      let modelStatusTab = 'Total';
+      let typeStatusTab = 'Total';
+      let locationStatusTab = 'Total';
+      let latestDashboardData = null;
 
       function parseJsonResponse(response) {
         return response.text().then(function(raw) {
@@ -242,8 +282,96 @@
         }
       }
      
+      function renderStatusTabs(containerId, activeKey, onClickHandlerName) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = STATUS_TABS.map(function(tab) {
+          var activeClass = tab.key === activeKey ? 'active' : '';
+          return `<button type="button" class="status-tab ${activeClass}" data-status="${tab.key}" onclick="${onClickHandlerName}('${tab.key}')">${tab.label}</button>`;
+        }).join('');
+      }
+
+      function getStatusCount(stats, statusKey) {
+        var s = stats || {};
+        if (statusKey === 'Total') {
+          return Number(s.In || 0) + Number(s.Out || 0) + Number(s.Problem || 0) + Number(s.Unknown || 0);
+        }
+        return Number(s[statusKey] || 0);
+      }
+
+      function toSortedEntriesByStatus(mapByStatus, activeStatus) {
+        var entries = Object.entries(mapByStatus || {}).map(function(pair) {
+          var name = pair[0];
+          var stats = pair[1] || {};
+          return { name: name, count: getStatusCount(stats, activeStatus), stats: stats };
+        }).filter(function(row) { return row.count > 0; });
+        entries.sort(function(a, b) { return b.count - a.count; });
+        return entries;
+      }
+
+      function renderCountList(containerId, mapByStatus, activeStatus, emptyText) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        var rows = toSortedEntriesByStatus(mapByStatus, activeStatus);
+        if (!rows.length) {
+          container.innerHTML = `<div class="loading">${emptyText}</div>`;
+          return;
+        }
+        container.innerHTML = rows.map(function(row) {
+          return `<div class="list-item"><span>${row.name}</span><span class="badge" style="background:#e2e8f0">${row.count}</span></div>`;
+        }).join('');
+      }
+
+      function setSummaryCards(data) {
+        var d = data || {};
+        var status = summaryStatusTab;
+        var totalItems = status === 'Total'
+          ? Number(d.totalItems || 0)
+          : Number(status === 'In' ? d.inStock : status === 'Out' ? d.outStock : d.problemItems) || 0;
+        var modelRows = toSortedEntriesByStatus(d.modelCountsByStatus || {}, status);
+        var locationRows = toSortedEntriesByStatus(d.locationCountsByStatus || {}, status);
+        var typeRows = toSortedEntriesByStatus(d.typeCountsByStatus || {}, status);
+        document.getElementById('totalItems').textContent = totalItems;
+        document.getElementById('inStock').textContent = modelRows.length;
+        document.getElementById('outStock').textContent = locationRows.length;
+        document.getElementById('problemItems').textContent = typeRows.length;
+      }
+
+      function applyDashboardView() {
+        if (!latestDashboardData) return;
+        setSummaryCards(latestDashboardData);
+        renderCountList('modelStats', latestDashboardData.modelCountsByStatus || {}, modelStatusTab, 'No model stats');
+        renderCountList('typeStats', latestDashboardData.typeCountsByStatus || {}, typeStatusTab, 'No type stats');
+        renderCountList('locationStats', latestDashboardData.locationCountsByStatus || {}, locationStatusTab, 'No location stats');
+      }
+
+      function onSummaryStatusTabClick(statusKey) {
+        summaryStatusTab = statusKey;
+        renderStatusTabs('summaryTabs', summaryStatusTab, 'onSummaryStatusTabClick');
+        applyDashboardView();
+      }
+
+      function onModelStatusTabClick(statusKey) {
+        modelStatusTab = statusKey;
+        renderStatusTabs('modelTabs', modelStatusTab, 'onModelStatusTabClick');
+        applyDashboardView();
+      }
+
+      function onTypeStatusTabClick(statusKey) {
+        typeStatusTab = statusKey;
+        renderStatusTabs('typeTabs', typeStatusTab, 'onTypeStatusTabClick');
+        applyDashboardView();
+      }
+
+      function onLocationStatusTabClick(statusKey) {
+        locationStatusTab = statusKey;
+        renderStatusTabs('locationTabs', locationStatusTab, 'onLocationStatusTabClick');
+        applyDashboardView();
+      }
+     
       function loadDashboard() {
         document.getElementById('modelStats').innerHTML = '<div class="loading">Loading...</div>';
+        document.getElementById('typeStats').innerHTML = '<div class="loading">Loading...</div>';
         document.getElementById('locationStats').innerHTML = '<div class="loading">Loading...</div>';
         document.getElementById('recentActivity').innerHTML = '<div class="loading">Loading...</div>';
        
@@ -262,60 +390,19 @@
             }
             var msg = `Error loading data: ${error.message || error}`;
             document.getElementById('modelStats').innerHTML = `<div style="color:red">${msg}</div>`;
+            document.getElementById('typeStats').innerHTML = `<div style="color:red">${msg}</div>`;
             document.getElementById('locationStats').innerHTML = `<div style="color:red">${msg}</div>`;
             document.getElementById('recentActivity').innerHTML = `<div style="color:red">${msg}</div>`;
           });
       }
      
       function updateDashboard(data) {
-        document.getElementById('totalItems').textContent = data.totalItems || 0;
-        document.getElementById('inStock').textContent = data.inStock || 0;
-        document.getElementById('outStock').textContent = data.outStock || 0;
-        document.getElementById('problemItems').textContent = data.problemItems || 0;
-       
-        let modelHtml = '';
-        const modelsByStatus = data.modelCountsByStatus || {};
-        if (Object.keys(modelsByStatus).length > 0) {
-          Object.entries(modelsByStatus).forEach(([model, stats]) => {
-            var inCount = Number((stats && stats.In) || 0);
-            var outCount = Number((stats && stats.Out) || 0);
-            var problemCount = Number((stats && stats.Problem) || 0);
-            var total = inCount + outCount + problemCount + Number((stats && stats.Unknown) || 0);
-            modelHtml += `<div class="list-item"><span>${model}</span><span><span class="badge badge-in">${inCount}</span> <span class="badge badge-out">${outCount}</span> <span class="badge badge-problem">${problemCount}</span> <span class="badge" style="background:#e2e8f0">${total}</span></span></div>`;
-          });
-        } else {
-          const models = data.modelCounts || {};
-          if (Object.keys(models).length === 0) {
-            modelHtml = '<div class="loading">No models found</div>';
-          } else {
-            Object.entries(models).forEach(([model, count]) => {
-              modelHtml += `<div class="list-item"><span>${model}</span><span class="badge" style="background:#e2e8f0">${count}</span></div>`;
-            });
-          }
-        }
-        document.getElementById('modelStats').innerHTML = modelHtml;
-       
-        let locationHtml = '';
-        const locationsByStatus = data.locationCountsByStatus || {};
-        if (Object.keys(locationsByStatus).length > 0) {
-          Object.entries(locationsByStatus).forEach(([loc, stats]) => {
-            var inCount = Number((stats && stats.In) || 0);
-            var outCount = Number((stats && stats.Out) || 0);
-            var problemCount = Number((stats && stats.Problem) || 0);
-            var total = inCount + outCount + problemCount + Number((stats && stats.Unknown) || 0);
-            locationHtml += `<div class="list-item"><span>${loc}</span><span><span class="badge badge-in">${inCount}</span> <span class="badge badge-out">${outCount}</span> <span class="badge badge-problem">${problemCount}</span> <span class="badge" style="background:#e2e8f0">${total}</span></span></div>`;
-          });
-        } else {
-          const locations = data.locationCounts || {};
-          if (Object.keys(locations).length === 0) {
-            locationHtml = '<div class="loading">No locations found</div>';
-          } else {
-            Object.entries(locations).forEach(([loc, count]) => {
-              locationHtml += `<div class="list-item"><span>${loc}</span><span class="badge" style="background:#e2e8f0">${count}</span></div>`;
-            });
-          }
-        }
-        document.getElementById('locationStats').innerHTML = locationHtml;
+        latestDashboardData = data || {};
+        renderStatusTabs('summaryTabs', summaryStatusTab, 'onSummaryStatusTabClick');
+        renderStatusTabs('modelTabs', modelStatusTab, 'onModelStatusTabClick');
+        renderStatusTabs('typeTabs', typeStatusTab, 'onTypeStatusTabClick');
+        renderStatusTabs('locationTabs', locationStatusTab, 'onLocationStatusTabClick');
+        applyDashboardView();
        
         let activityHtml = '';
         const recent = data.recentActivity || [];
