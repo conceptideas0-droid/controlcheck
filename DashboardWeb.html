@@ -93,12 +93,22 @@
       }
       .type-row-btn {
         width: 100%;
-        border: none;
-        background: transparent;
-        padding: 0;
-        margin: 0;
+        border: 1px solid #dbe5f2;
+        background: #f8fbff;
+        padding: 8px 10px;
+        margin: 0 0 6px 0;
         text-align: left;
         cursor: pointer;
+        border-radius: 10px;
+        transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+      .type-row-btn:hover {
+        background: #f1f6ff;
+        border-color: #c7d8f4;
+      }
+      .type-row-btn:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.28);
       }
       .type-row-main {
         display: flex;
@@ -109,13 +119,22 @@
       .type-name {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        font-size: 15px;
+        font-weight: 600;
+        color: #0f172a;
       }
-      .expand-icon {
-        color: #64748b;
-        font-size: 12px;
-        width: 12px;
-        text-align: center;
+      .type-row-right {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .toggle-icon {
+        color: #1e3a8a;
+        font-size: 18px;
+        font-weight: 700;
+        width: 16px;
+        text-align: right;
+        line-height: 1;
       }
       .sub-list {
         margin: 8px 0 12px 20px;
@@ -393,7 +412,7 @@
           var safeType = escapeHtml(row.name);
           var encodedType = encodeURIComponent(String(row.name || ''));
           var isExpanded = Boolean(expandedTypes[row.name]);
-          var icon = isExpanded ? '&#9660;' : '&#9658;';
+          var icon = isExpanded ? '&minus;' : '+';
           var modelMap = (modelsByTypeMapByStatus && modelsByTypeMapByStatus[row.name]) ? modelsByTypeMapByStatus[row.name] : {};
           var modelRows = isExpanded ? toSortedEntriesByStatus(modelMap, activeStatus) : [];
           var subHtml = '';
@@ -409,8 +428,8 @@
             <div>
               <button type="button" class="type-row-btn list-item" data-type="${encodedType}">
                 <div class="type-row-main">
-                  <span class="type-name"><span class="expand-icon">${icon}</span><span>${safeType}</span></span>
-                  <span class="badge" style="background:#e2e8f0">${row.count}</span>
+                  <span class="type-name">${safeType}</span>
+                  <span class="type-row-right"><span class="badge" style="background:#e2e8f0">${row.count}</span><span class="toggle-icon">${icon}</span></span>
                 </div>
               </button>
               ${subHtml}
