@@ -166,10 +166,15 @@
       const QR_DRAFT_KEY = 'inventoryQrDraftV1';
       let scannerToken = '', authToken = '', scannerMode = 'add', scannedItems = [], existingSerials = new Set();
       let moveKnownSerials = new Set(), knownItemMeta = new Map();
+      const SCANNER_TOKEN_SESSION_KEY = 'inventoryScannerToken';
       let inventoryIndexReady = false;
       let lastScanTimestamp = 0, cameraStream = null, scanRafId = null, scanCanvas = null, scanCtx = null, lastDecodeTs = 0;
 
       function authTokenVal() { return sessionStorage.getItem('inventoryLoginToken') || ''; }
+      function scannerTokenVal() {
+        const fromStorage = sessionStorage.getItem(SCANNER_TOKEN_SESSION_KEY) || '';
+        return String(fromStorage || '').trim();
+      }
       function parseJsonResponse(response) {
         return response.text().then(raw => {
           let data = null;
@@ -709,7 +714,8 @@
 
       window.addEventListener('DOMContentLoaded', () => {
         const p = new URLSearchParams(window.location.search);
-        scannerToken = p.get('token') || ''; scannerMode = p.get('mode') === 'move' ? 'move' : 'add';
+        scannerToken = scannerTokenVal();
+        scannerMode = p.get('mode') === 'move' ? 'move' : 'add';
         document.body.classList.remove('mode-add', 'mode-move');
         document.body.classList.add(scannerMode === 'move' ? 'mode-move' : 'mode-add');
         authToken = authTokenVal();
