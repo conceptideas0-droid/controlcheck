@@ -270,6 +270,16 @@
           <option value="All">모든 모델 All Models</option>
         </select>
       </div>
+
+      <div class="form-group">
+        <label>상태 Status</label>
+        <select id="statusFilter">
+          <option value="All">모두 All</option>
+          <option value="In">입고 In</option>
+          <option value="Out">출고 Out</option>
+          <option value="Problem">불량 Problem</option>
+        </select>
+      </div>
      
       <div class="button-group">
         <div class="button-row">
@@ -451,6 +461,7 @@
         const monthValue = document.getElementById('monthSelect').value;
         const type = document.getElementById('typeFilter').value;
         const model = document.getElementById('modelFilter').value;
+        const status = document.getElementById('statusFilter').value;
         
         if (!yearValue || !monthValue) { showStatus('년도와 월을 선택해주세요', false); return; }
         
@@ -459,13 +470,13 @@
         btn.disabled = true;
         btnText.innerHTML = '<span class="loading"></span> 생성 중...';
         
-        callApiPost('generateMonthlyReport', { params: { year: yearValue === 'All' ? null : parseInt(yearValue, 10), month: monthValue === 'All' ? null : parseInt(monthValue, 10), type: type, model: model } })
+        callApiPost('generateMonthlyReport', { params: { year: yearValue === 'All' ? null : parseInt(yearValue, 10), month: monthValue === 'All' ? null : parseInt(monthValue, 10), type: type, model: model, status: status } })
           .then(result => {
             btn.disabled = false;
             btnText.innerHTML = '📊 보고서 생성 Generate Report';
             if (result && result.success) {
               showStatus(`✅ 보고서 생성 완료: ${result.count}개 항목`, true);
-              document.getElementById('previewText').innerHTML = `📋 📊 총 ${result.count}개 내역<br>종류: ${type}<br>모델: ${model}`;
+              document.getElementById('previewText').innerHTML = `📋 📊 총 ${result.count}개 내역<br>종류: ${type}<br>모델: ${model}<br>상태: ${status}`;
               document.getElementById('preview').style.display = 'block';
               document.getElementById('printBtn').disabled = false;
               document.getElementById('printHelper').style.display = 'block';
@@ -486,6 +497,7 @@
         document.getElementById('monthSelect').value = 'All';
         document.getElementById('typeFilter').value = 'All';
         document.getElementById('modelFilter').value = 'All';
+        document.getElementById('statusFilter').value = 'All';
         document.getElementById('preview').style.display = 'none';
         document.getElementById('printBtn').disabled = true;
       }
