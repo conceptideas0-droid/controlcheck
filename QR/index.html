@@ -367,12 +367,13 @@
         const isAddOrIn = scannerMode === 'add' || (scannerMode === 'move' && moveStatus === 'In');
         let html = '';
         if (isAddOrIn) {
-          html = '<label><input type="radio" name="location" value="Office" checked onchange="handleLocationToggle()"> 서울 사무실 Seoul Office</label>';
+          if (scannerMode === 'add') html = '<label><input type="radio" name="location" value="Office" checked onchange="handleLocationToggle()"> 서울 사무실 Seoul Office</label>';
+          else html = '<label><input type="radio" name="location" value="Office" onchange="handleLocationToggle()"> 서울 사무실 Seoul Office</label>';
         } else if (moveStatus === 'Out') {
-          html = '<label><input type="radio" name="location" value="Suwon" checked onchange="handleLocationToggle()"> 수원 사무실 Suwon Office</label>';
+          html = '<label><input type="radio" name="location" value="Suwon" onchange="handleLocationToggle()"> 수원 사무실 Suwon Office</label>';
           html += '<label><input type="radio" name="location" value="Demo" onchange="handleLocationToggle()"> 서울 사무실 데모 사용 Demo</label>';
         } else {
-          html = '<label><input type="radio" name="location" value="Suwon" checked onchange="handleLocationToggle()"> 수원 사무실 Suwon Office</label>';
+          html = '<label><input type="radio" name="location" value="Suwon" onchange="handleLocationToggle()"> 수원 사무실 Suwon Office</label>';
         }
         html += '<label><input type="radio" name="location" value="기타 Other" onchange="handleLocationToggle()"> 기타 Other</label>';
         document.getElementById('locOptionsContainer').innerHTML = html;
@@ -729,6 +730,7 @@
       document.getElementById('submitBtn').addEventListener('click', async () => {
         dismissSubmitStatus();
         const locType = document.querySelector('input[name="location"]:checked')?.value || '';
+        if (scannerMode === 'move' && !locType) return alert('위치를 선택해주세요. Please select location.');
         let customLoc = document.getElementById('customLocation').value.trim();
         if (locType === 'Demo') customLoc = '서울 사무실 데모 사용 Demo';
         if (locType === '기타 Other' && !customLoc) return alert('상세 위치를 입력하세요.');

@@ -236,12 +236,12 @@
         document.getElementById(key === 'In' ? 'btnIn' : key === 'Out' ? 'btnOut' : 'btnProb').classList.add('selected');
         var html = '';
         if (key === 'In') {
-          html = '<label><input type="radio" name="location" value="Office" checked onchange="toggleLocation()"><span>서울 사무실 Seoul Office</span></label>';
+          html = '<label><input type="radio" name="location" value="Office" onchange="toggleLocation()"><span>서울 사무실 Seoul Office</span></label>';
         } else if (key === 'Out') {
-          html = '<label><input type="radio" name="location" value="Suwon" checked onchange="toggleLocation()"><span>수원 사무실 Suwon Office</span></label>';
+          html = '<label><input type="radio" name="location" value="Suwon" onchange="toggleLocation()"><span>수원 사무실 Suwon Office</span></label>';
           html += '<label><input type="radio" name="location" value="Demo" onchange="toggleLocation()"><span>서울 사무실 데모 사용 Demo</span></label>';
         } else {
-          html = '<label><input type="radio" name="location" value="Suwon" checked onchange="toggleLocation()"><span>수원 사무실 Suwon Office</span></label>';
+          html = '<label><input type="radio" name="location" value="Suwon" onchange="toggleLocation()"><span>수원 사무실 Suwon Office</span></label>';
         }
         html += '<label><input type="radio" name="location" value="기타 Other" onchange="toggleLocation()"><span>기타 Other</span></label>';
         document.getElementById('locContainer').innerHTML = html;
@@ -319,6 +319,7 @@
       }
       function moveSelectedItems() {
         var locType = document.querySelector('input[name="location"]:checked')?.value;
+        if (!locType) return alert('위치를 선택해주세요. Please select location.');
         var customLoc = document.getElementById('customLocation').value.trim();
         if (locType === 'Demo') customLoc = '서울 사무실 데모 사용 Demo';
         if (locType === '기타 Other' && !customLoc) return alert('Please enter location.');
