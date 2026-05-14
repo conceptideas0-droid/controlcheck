@@ -271,7 +271,9 @@
         }
         updateLocationOptions();
         const locType = String(draft.locationType || '');
-        if (locType) {
+        const moveKeyCurrent = String(draft.movementStatus || 'Out');
+        const canRestoreLocation = (scannerMode === 'add') || (scannerMode === 'move' && moveKeyCurrent === 'In');
+        if (locType && canRestoreLocation) {
           const locRadio = document.querySelector(`input[name="location"][value="${locType}"]`);
           if (locRadio) locRadio.checked = true;
         }
@@ -377,6 +379,9 @@
         }
         html += '<label><input type="radio" name="location" value="기타 Other" onchange="handleLocationToggle()"> 기타 Other</label>';
         document.getElementById('locOptionsContainer').innerHTML = html;
+        if (scannerMode === 'move' && (moveStatus === 'Out' || moveStatus === 'Problem')) {
+          document.querySelectorAll('input[name="location"]').forEach(function(r) { r.checked = false; });
+        }
         handleLocationToggle();
       }
 

@@ -220,7 +220,7 @@
         document.getElementById('useCurrentDate').checked = !!draft.useCurrentDate;
         toggleDate();
         var locationType = String(draft.locationType || '');
-        if (locationType) {
+        if (locationType && selectedMove === 'In') {
           var locRadio = document.querySelector(`input[name="location"][value="${locationType}"]`);
           if (locRadio) locRadio.checked = true;
         }
@@ -245,6 +245,9 @@
         }
         html += '<label><input type="radio" name="location" value="기타 Other" onchange="toggleLocation()"><span>기타 Other</span></label>';
         document.getElementById('locContainer').innerHTML = html;
+        if (key === 'Out' || key === 'Problem') {
+          document.querySelectorAll('input[name="location"]').forEach(function(r) { r.checked = false; });
+        }
         toggleLocation();
         saveMoveDraft();
       }
