@@ -378,7 +378,10 @@
         }
         html += '<label><input type="radio" name="location" value="기타 Other" onchange="handleLocationToggle()"> 기타 Other</label>';
         document.getElementById('locOptionsContainer').innerHTML = html;
-        if (scannerMode === 'move') {
+        if (scannerMode === 'move' && (moveStatus === 'Out' || moveStatus === 'Problem')) {
+          const other = document.querySelector('input[name="location"][value="기타 Other"]');
+          if (other) other.checked = true;
+        } else if (scannerMode === 'move') {
           document.querySelectorAll('input[name="location"]').forEach(function(r) { r.checked = false; });
         }
         handleLocationToggle();

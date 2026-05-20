@@ -245,7 +245,12 @@
         }
         html += '<label><input type="radio" name="location" value="기타 Other" onchange="toggleLocation()"><span>기타 Other</span></label>';
         document.getElementById('locContainer').innerHTML = html;
-        document.querySelectorAll('input[name="location"]').forEach(function(r) { r.checked = false; });
+        if (key === 'Out' || key === 'Problem') {
+          var other = document.querySelector('input[name="location"][value="기타 Other"]');
+          if (other) other.checked = true;
+        } else {
+          document.querySelectorAll('input[name="location"]').forEach(function(r) { r.checked = false; });
+        }
         toggleLocation();
         saveMoveDraft();
       }
